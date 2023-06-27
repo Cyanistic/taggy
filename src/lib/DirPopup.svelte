@@ -2,16 +2,19 @@
   import { invoke } from "@tauri-apps/api/tauri"
   import { open } from "@tauri-apps/api/dialog"
   import { readDir } from '@tauri-apps/api/fs';
+  import { createEventDispatcher } from "svelte";
+  const dispatch = createEventDispatcher();
+
   async function getDir(){
     const selected = await open({
       title: "Select your music directory",
       directory: true,
       multiple: false
     })
-
+    dispatch("updateDir", selected)
   }
 </script>
 
-<div class="flex justify-end border-gray-500 border-4">
+<div class="flex  justify-end border-gray-500 border-4">
     <button class="bg-gray-100 dark:bg-gray-900 text-gray-900 dark:text-gray-100" on:click={getDir}>Select Your Music Directory</button>
 </div>

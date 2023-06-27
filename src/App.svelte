@@ -1,6 +1,5 @@
 <script lang="ts">
   import { onMount } from "svelte";
-  import { invoke } from "@tauri-apps/api/tauri";
   import DirPopup from "./lib/DirPopup.svelte";
   import MainWindow from "./lib/MainWindow.svelte";
   let musicDir = "";
@@ -17,13 +16,18 @@
     localStorage.theme = 'dark'
     // Whenever the user explicitly chooses to respect the OS preference
     localStorage.removeItem('theme')
-    musicDir = localStorage.musicDir;
+    musicDir = localStorage.getItem("musicDir");
   })
+  function updateDirVar(val: CustomEvent<string>){
+    musicDir = val.detail;
+    localStorage.setItem("musicDir", musicDir);
+  }
+
 </script>
 
 <main class="container bg">
   {#if !musicDir}
-  <DirPopup />
+  <DirPopup on:updateDir={updateDirVar}/>
   {:else}
   <MainWindow/>
   {/if}

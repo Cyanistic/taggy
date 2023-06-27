@@ -14,6 +14,6 @@
 </script>
 
 <div class="flex self-center">
-  <p>Choose your music directory:</p>
+  <p>MainMenu</p>
   <button class="bg-gray-900" on:click={getDir}>Select Directory</button>
 </div>
