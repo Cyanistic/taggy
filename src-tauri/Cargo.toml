@@ -1,0 +1,25 @@
+[package]
+name = "taggy"
+version = "0.1.0"
+description = "Program that allows for easy changing of audio file tags. Running with no arguments opens the GUI version"
+authors = ["Cyanism"]
+license = "GPL-3.0"
+repository = ""
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[build-dependencies]
+tauri-build = { version = "1.4", features = [] }
+
+[dependencies]
+audiotags = "0.4.1"
+clap = { version = "4.3.8", features = ["derive"] }
+tauri = { version = "1.4", features = [ "fs-read-dir", "dialog-all"] }
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+
+[features]
+# this feature is used for production builds or when `devPath` points to the filesystem
+# DO NOT REMOVE!!
+custom-protocol = ["tauri/custom-protocol"]
