@@ -29,9 +29,10 @@
   {#if !musicDir}
   <DirPopup on:updateDir={updateDirVar}/>
   {:else}
-  <MainWindow/>
+  <MainWindow on:updateDir={updateDirVar}/>
   {/if}
 </main>
 
 <style>
+
 </style>
