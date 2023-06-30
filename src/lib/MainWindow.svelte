@@ -44,11 +44,12 @@
   async function loadSongs(){
     songs = await invoke("load_dir", {musicDir: localStorage.getItem("musicDir")}) 
     console.log("musicDir", localStorage.getItem("musicDir"))
-    const balls = await appCacheDir()
-    console.log(balls)
-    for (const song of songs){
-      const resourcePath = await resolveResource(song.cover_cache_dir);
-      console.log(resourcePath)
+    for(const song of songs){
+      if (song.cover_data != "AA=="){
+      song.cover_path = `data:image/jpg;base64,${song.cover_data}`
+      }else{
+      song.cover_path = "../../public/default.png"
+      }
     }
   }
 </script>
@@ -71,8 +72,8 @@
       <img class="" src="https://www.psdgraphics.com/wp-content/uploads/2010/11/music-note.jpg" alt="" >
     </div>
   </div>
-  <div class="fixed justify-end w-1/2 right-0">
-    <table class="table-fixed block">
+  <div class="fixed justify-end w-1/2 h-full overflow-y-scroll right-0">
+    <table class="">
       <thead>
         <tr>
           <th>Cover</th>
@@ -84,13 +85,19 @@
           <th>Album Title</th>
           <th>Album Artist</th>
           <th>Track</th>
-          <th>Discnumber</th>
+          <th>Disc Number</th>
         </tr>
       </thead>
       <tbody>
         {#each songs as song}
         <tr>
-          <td><img src={song.cover_cache_dir} alt="a"></td>
+          <td>
+          {#if song.cover_path}
+          <img src={song.cover_path} alt={song.title}>
+          {:else}
+          <img src="../../public/default.png" alt={song.title}>
+          {/if}
+          </td>
           <td>{song.file_name}</td>
           <td>{song.title}</td>
           <td>{song.artist}</td>
@@ -98,20 +105,10 @@
           <td>{song.genre}</td>
           <td>{song.album_title}</td>
           <td>{song.album_artist}</td>
-          <td>{song.track}</td>
-          <td>{song.disc}</td>
+          <td>{song.track_number}</td>
+          <td>{song.disc_number}</td>
         </tr>
         {/each}
-        <tr>
-          <td>Witchy Woman</td>
-          <td>The Eagles</td>
-          <td>1972</td>
-        </tr>
-        <tr>
-          <td>Shining Star</td>
-          <td>Earth, Wind, and Fire</td>
-          <td>1975</td>
-        </tr>
       </tbody>
     </table>
   </div>
