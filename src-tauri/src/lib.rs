@@ -1,5 +1,5 @@
 
-use std::{fmt, fs::{File, self, FileType}, io::Read, path::Path};
+use std::{fmt, fs::{File}, io::{Read, Write}, path::Path};
 
 use audiotags::{Tag, Picture, MimeType};
 use clap::Parser;
@@ -25,20 +25,24 @@ pub struct Args{
     #[arg(short, long)]
     pub cover: Option<String>,
 
+    ///Extract the audio file's cover image before modifications, if any, to a file
+    #[arg(short, long)]
+    pub extract_cover: Option<String>,
+
     ///Modify the audio file's album title tag
-    #[arg(long)]
+    #[arg(short='T',long)]
     pub album_title: Option<String>,
     
     ///Modify the audio file's album artist tag
-    #[arg(long)]
+    #[arg(short='A',long)]
     pub album_artist: Option<String>,
     
     ///Modify the audio file's track number tag
-    #[arg(long)]
+    #[arg(short='n',long)]
     pub track_number: Option<u16>,
 
     ///Modify the audio file's total tracks tag
-    #[arg(long)]
+    #[arg(short='N',long)]
     pub total_tracks: Option<u16>,
 
     ///Modify the audio file's genre tag
@@ -70,6 +74,12 @@ pub fn use_args(args: Args){
         }
         if let Some(genre) = args.genre{
             tag.set_genre(genre.as_str());
+        }
+        if let Some(dest) = args.extract_cover{
+            if let Some(cover) = tag.album_cover(){
+                let mut file = File::create(dest).unwrap();
+                file.write(cover.data).unwrap();
+            }
         }
         'outer: while let Some(ref cover) = args.cover{
            if let Ok(mut cover_file) = File::open(cover){

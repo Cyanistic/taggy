@@ -21,7 +21,26 @@
         "save": true 
       },
     "fs":{
-      "readDir": true
+      "readDir": true,
+      "scope": [
+					"$APP",
+					"$APP/**",
+					"$DESKTOP",
+					"$DESKTOP/**",
+					"$RESOURCE",
+					"$RESOURCE/**",
+					"$APPCONFIG",
+					"$APPCONFIG/**",
+					"$DATA",
+					"$DATA/**",
+					"$APPLOG",
+					"$APPLOG/**",
+					"$APPCACHE",
+					"$APPCACHE/**"
+				]
+      },
+      "path": {
+        "all": true
       }
     },
     "bundle": {

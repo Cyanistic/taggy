@@ -3,7 +3,8 @@
   import { createEventDispatcher, onMount } from "svelte";
   import { open } from "@tauri-apps/api/dialog"
   import { readDir } from '@tauri-apps/api/fs';
-
+  import { appCacheDir } from '@tauri-apps/api/path';
+  import { resolveResource } from '@tauri-apps/api/path';
   const dispatch = createEventDispatcher();
   let songs = [];
   async function getDir(){
@@ -37,18 +38,18 @@
     }else{
       document.documentElement.classList.remove("dark")
     }
+    console.log(songs)
   })
   
   async function loadSongs(){
-    invoke("load_dir", {musicDir: localStorage.getItem("musicDir")})
-    .then((res) => {
-      songs = res
-    })
-    .catch((err) => {
-      console.error(err)
-    })
+    songs = await invoke("load_dir", {musicDir: localStorage.getItem("musicDir")}) 
     console.log("musicDir", localStorage.getItem("musicDir"))
-    console.log("songs", songs)
+    const balls = await appCacheDir()
+    console.log(balls)
+    for (const song of songs){
+      const resourcePath = await resolveResource(song.cover_cache_dir);
+      console.log(resourcePath)
+    }
   }
 </script>
 
@@ -89,7 +90,7 @@
       <tbody>
         {#each songs as song}
         <tr>
-          <td><img src={song.cover} alt=""></td>
+          <td><img src={song.cover_cache_dir} alt="a"></td>
           <td>{song.file_name}</td>
           <td>{song.title}</td>
           <td>{song.artist}</td>
