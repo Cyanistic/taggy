@@ -1,6 +1,6 @@
 // Prevents additional console window on Windows in release, DO NOT REMOVE!!
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
-use std::{collections::HashMap, path::Path, fs::File, io::Write};
+use std::{collections::HashMap, path::Path, fs::File, io::Write, ffi::OsStr};
 
 use base64::{Engine as _, engine::general_purpose, prelude::BASE64_STANDARD};
 use hex_literal::hex;
@@ -58,7 +58,8 @@ fn load_dir(music_dir: String) -> Result<Vec<HashMap<String, String>>, String>{
             Err(_) => continue
         };
         let mut tag_map: HashMap<String, String> = HashMap::new();
-        tag_map.insert("file_name".to_string(), i.clone());
+        tag_map.insert("file_path".to_string(), i.clone());
+        tag_map.insert("file_name".to_string(), Path::new(&i.clone()).file_name().unwrap_or(&OsStr::new("")).to_string_lossy().to_string());
         tag_map.insert("title".to_string(),  tag.title().unwrap_or("").to_string());
         tag_map.insert("artist".to_string(), tag.artist().unwrap_or("").to_string());
         tag_map.insert("genre".to_string(), tag.genre().unwrap_or("").to_string());

@@ -2,9 +2,13 @@
   import { invoke } from "@tauri-apps/api/tauri"
   import { createEventDispatcher, onMount } from "svelte";
   import { open } from "@tauri-apps/api/dialog"
+  import { slide, fly, fade } from "svelte/transition";
+  import { backIn, cubicIn, quadInOut, quintOut } from 'svelte/easing';
   const dispatch = createEventDispatcher();
   let songs = [];
   let selected;
+  let activeElement = "";
+  let ready = false;
 
 
   function changeTheme(){
@@ -31,7 +35,7 @@
     }else{
       document.documentElement.classList.remove("dark")
     }
-    console.log(songs)
+    ready = true
   })
   
   async function loadSongs(){
@@ -50,10 +54,14 @@
     selected = song.song
   }
 
+  function changeActiveElement(id: string){
+    activeElement = id
+  }
 </script>
 
 <div>
-  <div class="w-1/2 h-full fixed bg-white dark:bg-gray-600 pt-8 pb-8 shadow-xl ring-1 ring-gray-900/5 sm:mx-auto sm:max-w-lg sm:rounded-r-3xl sm:px-5 left-0 flex">
+  {#if ready}
+  <div transition:fly={{ delay: 1000, duration: 700,  x: -400}} class="w-1/2 h-full fixed bg-white dark:bg-gray-600 pt-8 pb-8 shadow-xl ring-1 ring-gray-900/5 sm:mx-auto sm:max-w-lg sm:rounded-r-3xl sm:px-5 left-0 flex">
     <div class="h-2 fixed items-start">
       <button class="py-2 px-2 rounded-md text-center" on:click={changeTheme}>
         {#if localStorage.getItem("theme") == "dark"}
@@ -68,8 +76,9 @@
     </div>
     <div class="container flex items-center flex-col justify-center">
       {#if selected != null}
+      <label class="font-black px-10 text-xl">{selected.file_name}</label>
       <img class="w-full px-10" src={selected.cover_path} alt="" >
-      <div class="grid grid-cols-2 mx-10 gap-x-4">
+      <div class="grid grid-cols-2 mx-10 gap-x-4 gap-y-2">
         <div class="flex flex-col">
           <label for="titleField"><strong>Title</strong></label>
           <input id="titleField" type="text" bind:value={selected.title}>
@@ -79,36 +88,38 @@
           <input id="artistField" type="text" bind:value={selected.artist}>
         </div>
         <div class="flex flex-col">
-          <label for="artistField"><strong>Year</strong></label>
-          <input id="artistField" type="text" bind:value={selected.year}>
+          <label for="yearField"><strong>Year</strong></label>
+          <input id="yearField" type="text" bind:value={selected.year}>
         </div>
         <div class="flex flex-col">
-          <label for="artistField"><strong>Genre</strong></label>
-          <input id="artistField" type="text" bind:value={selected.genre}>
+          <label for="genreField"><strong>Genre</strong></label>
+          <input id="genreField" type="text" bind:value={selected.genre}>
         </div>
         <div class="flex flex-col">
-          <label for="artistField"><strong>Album Title</strong></label>
-          <input id="artistField" type="text" bind:value={selected.album_title}>
+          <label for="albumTitleField"><strong>Album Title</strong></label>
+          <input id="albumTitleField" type="text" bind:value={selected.album_title}>
         </div>
         <div class="flex flex-col">
-          <label for="artistField"><strong>Album Artist</strong></label>
-          <input id="artistField" type="text" bind:value={selected.album_artist}>
+          <label for="albumArtistField"><strong>Album Artist</strong></label>
+          <input id="albumArtistField" type="text" bind:value={selected.album_artist}>
         </div>
         <div class="flex flex-col">
-          <label for="artistField"><strong>Track</strong></label>
-          <input id="artistField" type="text" bind:value={selected.track_number}>
+          <label for="trackField"><strong>Track</strong></label>
+          <input id="trackField" type="text" bind:value={selected.track_number}>
         </div>
         <div class="flex flex-col">
-          <label for="artistField"><strong>Disc Number</strong></label>
-          <input id="artistField" type="text" bind:value={selected.disc_number}>
+          <label for="discNumberField"><strong>Disc Number</strong></label>
+          <input id="discNumberField" type="text" bind:value={selected.disc_number}>
         </div>
+        <button class="text-xl">Save</button>
+        <button class="text-xl" on:click={() => changeSong({selected})}>Reset</button>
       </div>
       {:else}
       <img class="w-full px-10" src="/default.png" alt="" >
       {/if}
     </div>
   </div>
-  <div class="fixed justify-end lg:w-8/12 md:w-1/2 h-full right-10 bg-gray-600 overflow-x-auto">
+  <div transition:fly={{ delay: 100, duration: 1000, y: 1000}} class="fixed justify-end lg:w-8/12 md:w-1/2 h-full right-10 overflow-x-auto">
     <table>
       <thead class="sticky top-0 bg-gray-600">
         <tr>
@@ -126,7 +137,7 @@
       </thead>
       <tbody class="overflow-y-auto">
         {#each songs as song}
-        <tr class="hover:bg-red-300 rounded-l-3xl" on:click={() => changeSong({song})}>
+        <tr transition:fade={{delay: 300, duration: 500}} class="transition ease-in-out hover:dark:bg-gray-800 duration-500 rounded-l-3xl {activeElement === song.file_name ? 'active' : ''}" id={song.file_name} on:click={() => {changeSong({song}); changeActiveElement(song.file_name)}}>
           <td class="rounded-l-3xl">
           {#if song.cover_path}
           <img class="rounded-3xl" src={song.cover_path} alt={song.title}>
@@ -134,7 +145,7 @@
           <img src="/default.png" alt={song.title}>
           {/if}
           </td>
-          <td>{song.file_name}</td>
+          <td class="max-w-sm truncate">{song.file_path}</td>
           <td>{song.title}</td>
           <td>{song.artist}</td>
           <td>{song.year}</td>
@@ -148,4 +159,17 @@
       </tbody>
     </table>
   </div>
+  {/if}
 </div>
+
+<style>
+  .active{
+    background-color: #202123;
+  }
+  button{
+    border-radius: 10px;
+  }
+  button:hover{
+    background-color: #112D4E;    
+  }
+</style>
