@@ -2,11 +2,11 @@
   import { invoke } from "@tauri-apps/api/tauri"
   import { createEventDispatcher, onMount } from "svelte";
   import { open } from "@tauri-apps/api/dialog"
-  import { slide, fly, fade } from "svelte/transition";
-  import { backIn, cubicIn, quadInOut, quintOut } from 'svelte/easing';
+  import { blur, fly, fade } from "svelte/transition";
   const dispatch = createEventDispatcher();
   let songs = [];
   let selected;
+  let initialSelected;
   let activeElement = "";
   let ready = false;
 
@@ -43,19 +43,43 @@
     console.log("musicDir", localStorage.getItem("musicDir"))
     for(const song of songs){
       if (song.cover_data != "AA=="){
-      song.cover_path = `data:image/jpg;base64,${song.cover_data}`
+      song.cover_url = `data:image/jpg;base64,${song.cover_data}`
       }else{
-      song.cover_path = "../../public/default.png"
+      song.cover_url = "../../public/default.png"
       }
     }
   }
 
   function changeSong(song: object){
-    selected = song.song
+    selected = structuredClone(song)
+    initialSelected = song
+  }
+
+  function resetSong(){
+    selected = structuredClone(initialSelected)
+  }
+
+  function saveSong(){
+    invoke("save_song", { songData: selected })
+    .then()
+    .catch(e => console.log(e))
+    loadSongs()
   }
 
   function changeActiveElement(id: string){
     activeElement = id
+  }
+  
+  async function changeImage(){
+    let image = await open({
+      title: "Select a new image",
+      directory: false,
+      multiple: false
+    })
+    let [imageData, imageType] = await invoke("image_to_data", { filePath: image });
+    selected.cover_url = `data:image/jpg;base64,${imageData}`
+    selected.cover_data = imageData
+    selected.cover_type = imageType
   }
 </script>
 
@@ -77,42 +101,42 @@
     <div class="container flex items-center flex-col justify-center">
       {#if selected != null}
       <label class="font-black px-10 text-xl">{selected.file_name}</label>
-      <img class="w-full px-10" src={selected.cover_path} alt="" >
+      <img class="w-full px-10" src={selected.cover_url} alt="" on:click={changeImage}>
       <div class="grid grid-cols-2 mx-10 gap-x-4 gap-y-2">
         <div class="flex flex-col">
           <label for="titleField"><strong>Title</strong></label>
-          <input id="titleField" type="text" bind:value={selected.title}>
+          <input id="titleField" type="text" bind:value={selected.title} placeholder={initialSelected.title}>
         </div>
         <div class="flex flex-col">
           <label for="artistField"><strong>Artist</strong></label>
-          <input id="artistField" type="text" bind:value={selected.artist}>
+          <input id="artistField" type="text" bind:value={selected.artist} placeholder={initialSelected.artist}>
         </div>
         <div class="flex flex-col">
           <label for="yearField"><strong>Year</strong></label>
-          <input id="yearField" type="text" bind:value={selected.year}>
+          <input id="yearField" type="text" bind:value={selected.year} placeholder={initialSelected.year}>
         </div>
         <div class="flex flex-col">
           <label for="genreField"><strong>Genre</strong></label>
-          <input id="genreField" type="text" bind:value={selected.genre}>
+          <input id="genreField" type="text" bind:value={selected.genre} placeholder={initialSelected.genre}>
         </div>
         <div class="flex flex-col">
           <label for="albumTitleField"><strong>Album Title</strong></label>
-          <input id="albumTitleField" type="text" bind:value={selected.album_title}>
+          <input id="albumTitleField" type="text" bind:value={selected.album_title} placeholder={initialSelected.album_title}>
         </div>
         <div class="flex flex-col">
           <label for="albumArtistField"><strong>Album Artist</strong></label>
-          <input id="albumArtistField" type="text" bind:value={selected.album_artist}>
+          <input id="albumArtistField" type="text" bind:value={selected.album_artist} placeholder={initialSelected.album_artist}>
         </div>
         <div class="flex flex-col">
           <label for="trackField"><strong>Track</strong></label>
-          <input id="trackField" type="text" bind:value={selected.track_number}>
+          <input id="trackField" type="text" bind:value={selected.track_number} placeholder={initialSelected.track_number}>
         </div>
         <div class="flex flex-col">
           <label for="discNumberField"><strong>Disc Number</strong></label>
-          <input id="discNumberField" type="text" bind:value={selected.disc_number}>
+          <input id="discNumberField" type="text" bind:value={selected.disc_number} placeholder={initialSelected.disc_number}>
         </div>
-        <button class="text-xl">Save</button>
-        <button class="text-xl" on:click={() => changeSong({selected})}>Reset</button>
+        <button class="text-xl" on:click={saveSong}>Save</button>
+        <button class="text-xl" on:click={resetSong}>Reset</button>
       </div>
       {:else}
       <img class="w-full px-10" src="/default.png" alt="" >
@@ -137,10 +161,10 @@
       </thead>
       <tbody class="overflow-y-auto">
         {#each songs as song}
-        <tr transition:fade={{delay: 300, duration: 500}} class="transition ease-in-out hover:dark:bg-gray-800 duration-500 rounded-l-3xl {activeElement === song.file_name ? 'active' : ''}" id={song.file_name} on:click={() => {changeSong({song}); changeActiveElement(song.file_name)}}>
+        <tr transition:fade={{delay: 300, duration: 500}} class="transition ease-in-out hover:dark:bg-gray-800 duration-500 rounded-l-3xl {activeElement === song.file_name ? 'active' : ''}" id={song.file_name} on:click={() => {changeSong(song); changeActiveElement(song.file_name)}}>
           <td class="rounded-l-3xl">
-          {#if song.cover_path}
-          <img class="rounded-3xl" src={song.cover_path} alt={song.title}>
+          {#if song.cover_url}
+          <img class="rounded-3xl" src={song.cover_url} alt={song.title}>
           {:else}
           <img src="/default.png" alt={song.title}>
           {/if}

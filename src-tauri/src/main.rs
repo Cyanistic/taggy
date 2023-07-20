@@ -1,13 +1,16 @@
 // Prevents additional console window on Windows in release, DO NOT REMOVE!!
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
-use std::{collections::HashMap, path::Path, fs::File, io::Write, ffi::OsStr};
+use std::{collections::HashMap, path::Path, fs::File, io::{Write, Read}, ffi::OsStr};
 
 use base64::{Engine as _, engine::general_purpose, prelude::BASE64_STANDARD};
 use hex_literal::hex;
+use serresult::SerResult;
 use sha2::{Sha256, Sha512, Digest};
 use taggy::*;
 use clap::Parser;
+use anyhow::Result;
 use audiotags::{Tag, Picture, MimeType};
+mod serresult;
 // Learn more about Tauri commands at https://tauri.app/v1/guides/features/command
 
 fn main() {
@@ -22,7 +25,7 @@ fn main() {
         title: _,
         artist: _, ..
     } => tauri::Builder::default()
-        .invoke_handler(tauri::generate_handler![load_dir])
+        .invoke_handler(tauri::generate_handler![load_dir, image_to_data, save_song])
         .run(tauri::generate_context!())
         .expect("error while running tauri application"),
     _ => {
@@ -69,6 +72,7 @@ fn load_dir(music_dir: String) -> Result<Vec<HashMap<String, String>>, String>{
         tag_map.insert("album_artist".to_string(), tag.album_artist().unwrap_or("").to_string());
         tag_map.insert("disc_number".to_string(),format!("{}/{}", tag.disc().0.unwrap_or(0), tag.disc().1.unwrap_or(0)).to_string());
         tag_map.insert("cover_data".to_string(),  BASE64_STANDARD.encode(tag.album_cover().unwrap_or(Picture { data: &[0], mime_type: MimeType::Jpeg }).data).to_string());
+        tag_map.insert("cover_type".to_string(), "jpg".to_string()); 
         /* let cover_cache_dir; */
         // if let Some(image) = tag.album_cover(){
         //     let file_path = Path::new(&i);
@@ -94,3 +98,64 @@ fn load_dir(music_dir: String) -> Result<Vec<HashMap<String, String>>, String>{
     Ok(tags)
 }
 
+#[tauri::command]
+fn image_to_data(file_path: String) -> SerResult<(String, String)>{
+    if let Ok(tag) = Tag::new().read_from_path(&file_path) {
+        let asdajsd = match tag.album_cover().unwrap_or(Picture { data: &[0], mime_type: MimeType::Jpeg }).mime_type{
+            MimeType::Jpeg => "jpg".to_string(),
+            MimeType::Png => "png".to_string(),
+            MimeType::Bmp => "bmp".to_string(),
+            MimeType::Gif => "gif".to_string(),
+            MimeType::Tiff => "tiff".to_string()
+        };
+        return Ok((BASE64_STANDARD.encode(tag.album_cover().unwrap_or(Picture { data: &[0], mime_type: MimeType::Jpeg }).data), asdajsd))
+        
+    }
+    let mut file = File::open(&file_path)?;
+    let mut cover_type = String::new();
+    if let Some(ind) = file_path.rfind('.'){
+        cover_type = file_path[ind+1..].to_string();
+    }
+    let mut buf = Vec::new();
+    file.read_to_end(&mut buf)?;
+    Ok((BASE64_STANDARD.encode(buf), cover_type))
+}
+
+#[tauri::command]
+fn save_song(song_data: HashMap<&str, &str>) -> SerResult<()>{    
+    let path = *song_data.get("file_path").unwrap();
+    let cover_type = *song_data.get("cover_type").unwrap();
+    let mut tag = Tag::new().read_from_path(&path)?;
+    for (key, val) in song_data.into_iter(){
+        match key {
+            "album_artist" => tag.set_album_artist(val),
+            "album_title" => tag.set_album_title(val),
+            "artist" => tag.set_artist(val),
+            "cover_data" => {
+                let mime = match cover_type {
+                    "jpg" | "jpeg" => MimeType::Jpeg,
+                    "png" => MimeType::Png,
+                    "tiff" => MimeType::Tiff,
+                    "bmp" => MimeType::Bmp,
+                    "gif" => MimeType::Gif,
+                    _ => continue
+                };
+                tag.set_album_cover(Picture { data: BASE64_STANDARD.decode(val)?.as_slice(), mime_type: mime });
+            },
+            "disc_number" => {
+                ()
+            },
+            "genre" => tag.set_genre(val),
+            "track_number" => {
+                ()
+            },
+            "title" => tag.set_title(val),
+            "year" => if let Ok(value) = val.parse(){
+                tag.set_year(value);
+            },
+            _ => ()
+        }
+    }
+    tag.write_to_path(&path)?;
+    Ok(())
+}

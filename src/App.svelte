@@ -1,7 +1,7 @@
 <script lang="ts">
-  import { onMount } from "svelte";
   import DirPopup from "./lib/DirPopup.svelte";
   import MainWindow from "./lib/MainWindow.svelte";
+  import { onMount } from "svelte";
   let musicDir = "";
 
   onMount(() => {
