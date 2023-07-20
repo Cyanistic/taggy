@@ -1,12 +1,11 @@
 // Prevents additional console window on Windows in release, DO NOT REMOVE!!
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
-use std::{collections::HashMap, path::Path, fs::File, io::{Write, Read}, ffi::OsStr};
+use std::{collections::HashMap, path::Path, fs::File, io::Read, ffi::OsStr};
 
 use base64::{Engine as _, engine::general_purpose, prelude::BASE64_STANDARD};
 use serresult::SerResult;
 use taggy::*;
 use clap::Parser;
-use anyhow::Result;
 use audiotags::{Tag, Picture, MimeType};
 mod serresult;
 
@@ -38,15 +37,15 @@ fn main() {
 
 fn load_subdir(music_dir: String) -> SerResult<Vec<String>>{
     let mut files: Vec<String> = Vec::new();
-    for entry in std::fs::read_dir(music_dir).unwrap(){
+    for entry in std::fs::read_dir(music_dir)?{
         if let Ok(entry) = entry{
             if let Ok(file_type) = entry.file_type(){
                 if file_type.is_file(){
-                    if let Some(file_name) = entry.file_name().to_str(){
+                    if entry.file_name().to_str().is_some(){
                         files.push(entry.path().to_str().unwrap().to_string());
-                    }else if file_type.is_dir(){
-                       files.append(&mut load_subdir(entry.path().to_str().unwrap().to_string())?);
                     }
+                }else if file_type.is_dir(){
+                       files.append(&mut load_subdir(entry.path().to_str().unwrap().to_string())?);
                 }
             }
         }
@@ -56,31 +55,37 @@ fn load_subdir(music_dir: String) -> SerResult<Vec<String>>{
 
 // Loads all audio files in the directory specified by the user
 #[tauri::command]
-fn load_dir(music_dir: String, options: HashMap<String, String>) -> SerResult<Vec<HashMap<String, String>>>{
+fn load_dir(music_dir: String, recursive: bool) -> SerResult<Vec<HashMap<String, String>>>{
     let mut files: Vec<String> = Vec::new();
-    let mut recurse = false;
-    if let Some(opt) = options.get("recurse"){
-        recurse = opt.parse()?
-    }
     for entry in std::fs::read_dir(music_dir).unwrap(){
         if let Ok(entry) = entry{
             if let Ok(file_type) = entry.file_type(){
                 if file_type.is_file(){
                     if let Some(file_name) = entry.file_name().to_str(){
                         files.push(entry.path().to_str().unwrap().to_string());
-                    }else if recurse && file_type.is_dir(){
-                        files.append(&mut load_subdir(entry.path().to_str().unwrap().to_string())?);
                     }
+                }else if recursive && file_type.is_dir(){
+                    files.append(&mut load_subdir(entry.path().to_str().unwrap().to_string())?);
                 }
             }
         }
     }
     let mut tags: Vec<HashMap<String, String>> = Vec::new();
     for i in files{
-        let mut tag = match Tag::new().read_from_path(i.clone()){
-            Ok(tag) => tag,
-            Err(_) => continue
-        };
+        let tag; 
+        let file_name = Path::new(&i.clone()).file_name().unwrap_or(&OsStr::new("")).to_string_lossy().to_string();
+        if let Some(ind) = file_name.rfind('.'){
+            match &file_name[ind+1..] {
+                "mp3" | "m4a" | "mp4" | "flac" => {
+                tag = match Tag::new().read_from_path(i.clone()){
+                    Ok(tag) => tag,
+                    Err(_) => continue
+                };}
+                _ => continue
+            }
+        }else {
+            continue;
+        }
         let mut tag_map: HashMap<String, String> = HashMap::new();
         tag_map.insert("file_path".to_string(), i.clone());
         tag_map.insert("file_name".to_string(), Path::new(&i.clone()).file_name().unwrap_or(&OsStr::new("")).to_string_lossy().to_string());
