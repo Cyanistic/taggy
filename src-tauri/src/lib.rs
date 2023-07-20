@@ -1,5 +1,5 @@
 
-use std::{fmt, fs::{File}, io::{Read, Write}, path::Path};
+use std::{fs::{File}, io::{Read, Write}, path::Path};
 
 use audiotags::{Tag, Picture, MimeType};
 use clap::Parser;
@@ -78,7 +78,7 @@ pub fn use_args(args: Args){
         if let Some(dest) = args.extract_cover{
             if let Some(cover) = tag.album_cover(){
                 let mut file = File::create(dest).unwrap();
-                file.write(cover.data).unwrap();
+                file.write_all(cover.data).unwrap();
             }
         }
         'outer: while let Some(ref cover) = args.cover{

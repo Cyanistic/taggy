@@ -3,15 +3,12 @@
 use std::{collections::HashMap, path::Path, fs::File, io::{Write, Read}, ffi::OsStr};
 
 use base64::{Engine as _, engine::general_purpose, prelude::BASE64_STANDARD};
-use hex_literal::hex;
 use serresult::SerResult;
-use sha2::{Sha256, Sha512, Digest};
 use taggy::*;
 use clap::Parser;
 use anyhow::Result;
 use audiotags::{Tag, Picture, MimeType};
 mod serresult;
-// Learn more about Tauri commands at https://tauri.app/v1/guides/features/command
 
 fn main() {
     let args = Args::parse();
@@ -39,9 +36,7 @@ fn main() {
     }
 }
 
-#[tauri::command]
-fn load_dir(music_dir: String) -> Result<Vec<HashMap<String, String>>, String>{
-    println!("{}", std::env::current_dir().unwrap().to_str().unwrap());
+fn load_subdir(music_dir: String) -> SerResult<Vec<String>>{
     let mut files: Vec<String> = Vec::new();
     for entry in std::fs::read_dir(music_dir).unwrap(){
         if let Ok(entry) = entry{
@@ -49,6 +44,32 @@ fn load_dir(music_dir: String) -> Result<Vec<HashMap<String, String>>, String>{
                 if file_type.is_file(){
                     if let Some(file_name) = entry.file_name().to_str(){
                         files.push(entry.path().to_str().unwrap().to_string());
+                    }else if file_type.is_dir(){
+                       files.append(&mut load_subdir(entry.path().to_str().unwrap().to_string())?);
+                    }
+                }
+            }
+        }
+    }
+    Ok(files)
+}
+
+// Loads all audio files in the directory specified by the user
+#[tauri::command]
+fn load_dir(music_dir: String, options: HashMap<String, String>) -> SerResult<Vec<HashMap<String, String>>>{
+    let mut files: Vec<String> = Vec::new();
+    let mut recurse = false;
+    if let Some(opt) = options.get("recurse"){
+        recurse = opt.parse()?
+    }
+    for entry in std::fs::read_dir(music_dir).unwrap(){
+        if let Ok(entry) = entry{
+            if let Ok(file_type) = entry.file_type(){
+                if file_type.is_file(){
+                    if let Some(file_name) = entry.file_name().to_str(){
+                        files.push(entry.path().to_str().unwrap().to_string());
+                    }else if recurse && file_type.is_dir(){
+                        files.append(&mut load_subdir(entry.path().to_str().unwrap().to_string())?);
                     }
                 }
             }
@@ -73,26 +94,6 @@ fn load_dir(music_dir: String) -> Result<Vec<HashMap<String, String>>, String>{
         tag_map.insert("disc_number".to_string(),format!("{}/{}", tag.disc().0.unwrap_or(0), tag.disc().1.unwrap_or(0)).to_string());
         tag_map.insert("cover_data".to_string(),  BASE64_STANDARD.encode(tag.album_cover().unwrap_or(Picture { data: &[0], mime_type: MimeType::Jpeg }).data).to_string());
         tag_map.insert("cover_type".to_string(), "jpg".to_string()); 
-        /* let cover_cache_dir; */
-        // if let Some(image) = tag.album_cover(){
-        //     let file_path = Path::new(&i);
-        //     let mut file_name = String::new();
-        //     if let Some(ind) = file_path.file_name().unwrap().to_str().unwrap().rfind('.'){
-        //         let mut hasher = Sha256::new();
-        //         hasher.update(image.data.clone());
-        //         file_name = hex::encode(&hasher.finalize()[..]).to_string() + ".jpg";
-        //     }
-        //     cover_cache_dir = Path::new(&format!("{}/taggy/album_covers/{}", dirs::cache_dir().unwrap().to_str().unwrap(), file_name)).to_owned();
-        //     if !Path::new(&format!("{}/taggy/album_covers", dirs::cache_dir().unwrap().to_str().unwrap())).is_dir(){
-        //         std::fs::create_dir_all(Path::new(&format!("{}/taggy/album_covers", dirs::cache_dir().unwrap().to_str().unwrap())));
-        //     }
-        //     File::create(cover_cache_dir.clone()).unwrap().write(image.data).unwrap();
-        //     tag_map.insert("cover_cache_dir".to_string(), cover_cache_dir.to_str().unwrap().to_string());
-        // }else{
-        //     tag_map.insert("cover_cache_dir".to_string(), "".to_string());
-        // }
-
-        // tag_map.insert("cover_cache_dir".to_string(), String::from_utf8(tag.album_cover().unwrap_or(Picture { data: &[0], mime_type: MimeType::Jpeg }).data.to_owned()).unwrap_or("".to_string()));
         tags.push(tag_map);
     }
     tags.sort_unstable_by(|a, b| a[&"file_name".to_string()].partial_cmp(&b[&"file_name".to_string()]).unwrap());
@@ -144,11 +145,17 @@ fn save_song(song_data: HashMap<&str, &str>) -> SerResult<()>{
                 tag.set_album_cover(Picture { data: BASE64_STANDARD.decode(val)?.as_slice(), mime_type: mime });
             },
             "disc_number" => {
-                ()
+                if let Some(ind) = val.rfind('/'){
+                    tag.set_disc_number(val[..ind].parse()?);
+                    tag.set_total_discs(val[ind+1..].parse()?);
+                }
             },
             "genre" => tag.set_genre(val),
             "track_number" => {
-                ()
+                if let Some(ind) = val.rfind('/'){
+                    tag.set_track_number(val[..ind].parse()?);
+                    tag.set_total_tracks(val[ind+1..].parse()?);
+                }
             },
             "title" => tag.set_title(val),
             "year" => if let Ok(value) = val.parse(){
