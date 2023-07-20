@@ -97,7 +97,7 @@
 
 <div>
   {#if ready}
-  <div transition:fly={{ delay: 1000, duration: 700,  x: -400}} class="w-1/2 h-full fixed bg-white dark:bg-gray-600 pt-8 pb-8 shadow-xl ring-1 ring-gray-900/5 sm:mx-auto sm:max-w-lg sm:rounded-r-3xl sm:px-5 left-0 flex border-black">
+  <div transition:fly={{ delay: 1000, duration: 700,  x: -400}} class="w-5/12 h-full fixed bg-white dark:bg-gray-600 pt-8 pb-8 shadow-xl ring-1 ring-gray-900/5 sm:mx-auto max-w-lg rounded-r-3xl px-5 left-0 flex border-black">
     <div class="h-2 fixed items-start">
       <button class="py-2 px-2 rounded-md text-center" on:click={changeTheme}>
         {#if localStorage.getItem("theme") == "dark"}
@@ -168,11 +168,11 @@
       {/if}
     </div>
   </div>
-  <div transition:fly={{ delay: 100, duration: 1000, y: 1000}} class="fixed justify-end lg:w-8/12 md:w-1/2 h-full right-10 overflow-x-auto">
-    <table>
+  <div transition:fly={{ delay: 100, duration: 1000, y: 1000}} class="fixed justify-end xl:w-8/12 w-7/12 h-full right-0 overflow-x-auto">
+    <table class="table-fixed">
       <thead class="sticky top-0 bg-gray-600">
         <tr>
-          <th>Cover</th>
+          <th class="px-2 rounded-l-xl">Cover</th>
           <th>File Name</th>
           <th>Song</th>
           <th>Artist</th>
@@ -181,7 +181,7 @@
           <th>Album Title</th>
           <th>Album Artist</th>
           <th>Track</th>
-          <th>Disc Number</th>
+          <th class="px-2 rounded-r-xl">Disc Number</th>
         </tr>
       </thead>
       <tbody class="overflow-y-auto">
@@ -189,17 +189,17 @@
         <tr in:fade={{delay: 300, duration: 500}} class="transition ease-in-out hover:dark:bg-gray-800 duration-500 rounded-l-3xl max-h-4 {activeElement === song.file_name ? 'active' : ''}" id={song.file_name} on:click={() => {changeSong(song); changeActiveElement(song.file_name)}}>
           <td class="rounded-l-3xl">
           {#if song.cover_url}
-          <img class="rounded-3xl" src={song.cover_url} alt={song.title}>
+          <img class="rounded-3xl max-h-20" src={song.cover_url} alt={song.title}>
           {:else}
           <img src="/default.png" alt={song.title}>
           {/if}
           </td>
           <td class="max-w-sm truncate">{song.file_path}</td>
-          <td class="max-w-sm truncate">{song.title}</td>
+          <td>{song.title}</td>
           <td>{song.artist}</td>
           <td>{song.year}</td>
           <td>{song.genre}</td>
-          <td class="max-w-sm truncate">{song.album_title}</td>
+          <td>{song.album_title}</td>
           <td>{song.album_artist}</td>
           <td>{song.track_number}</td>
           <td class="rounded-r-3xl">{song.disc_number}</td>
