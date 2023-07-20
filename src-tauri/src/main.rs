@@ -25,7 +25,7 @@ fn main() {
         title: _,
         artist: _, ..
     } => tauri::Builder::default()
-        .invoke_handler(tauri::generate_handler![load_dir, image_to_data, save_song])
+        .invoke_handler(tauri::generate_handler![load_dir, image_to_data, save_song, search])
         .run(tauri::generate_context!())
         .expect("error while running tauri application"),
     _ => {
@@ -95,24 +95,25 @@ fn load_dir(music_dir: String) -> Result<Vec<HashMap<String, String>>, String>{
         // tag_map.insert("cover_cache_dir".to_string(), String::from_utf8(tag.album_cover().unwrap_or(Picture { data: &[0], mime_type: MimeType::Jpeg }).data.to_owned()).unwrap_or("".to_string()));
         tags.push(tag_map);
     }
+    tags.sort_unstable_by(|a, b| a[&"file_name".to_string()].partial_cmp(&b[&"file_name".to_string()]).unwrap());
     Ok(tags)
 }
 
 #[tauri::command]
 fn image_to_data(file_path: String) -> SerResult<(String, String)>{
+    let mut cover_type = String::new();
     if let Ok(tag) = Tag::new().read_from_path(&file_path) {
-        let asdajsd = match tag.album_cover().unwrap_or(Picture { data: &[0], mime_type: MimeType::Jpeg }).mime_type{
+        cover_type = match tag.album_cover().unwrap_or(Picture { data: &[0], mime_type: MimeType::Jpeg }).mime_type{
             MimeType::Jpeg => "jpg".to_string(),
             MimeType::Png => "png".to_string(),
             MimeType::Bmp => "bmp".to_string(),
             MimeType::Gif => "gif".to_string(),
             MimeType::Tiff => "tiff".to_string()
         };
-        return Ok((BASE64_STANDARD.encode(tag.album_cover().unwrap_or(Picture { data: &[0], mime_type: MimeType::Jpeg }).data), asdajsd))
+        return Ok((BASE64_STANDARD.encode(tag.album_cover().unwrap_or(Picture { data: &[0], mime_type: MimeType::Jpeg }).data), cover_type))
         
     }
     let mut file = File::open(&file_path)?;
-    let mut cover_type = String::new();
     if let Some(ind) = file_path.rfind('.'){
         cover_type = file_path[ind+1..].to_string();
     }
@@ -158,4 +159,9 @@ fn save_song(song_data: HashMap<&str, &str>) -> SerResult<()>{
     }
     tag.write_to_path(&path)?;
     Ok(())
+}
+
+#[tauri::command]
+fn search<'a>(songs: Vec<HashMap<&'a str, &'a str>>, pattern: &'a str) -> Vec<HashMap<&'a str, &'a str>>{
+    return songs.into_iter().filter(|x| x[&"file_name"].to_lowercase().contains(pattern) || x[&"title"].to_lowercase().contains(pattern) || x[&"artist"].to_lowercase().contains(pattern) || x[&"album_artist"].to_lowercase().contains(pattern) || x[&"album_title"].to_lowercase().contains(pattern)).collect()
 }
