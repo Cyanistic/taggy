@@ -9,4 +9,4 @@ const config = {
   plugins: [],
 };
 
-module.exports = config;
+module.exports = { darkMode: "class", ...config};

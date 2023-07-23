@@ -86,6 +86,7 @@ fn load_dir(music_dir: String, recursive: bool) -> SerResult<Vec<HashMap<String,
         }else {
             continue;
         }
+        
         let mut tag_map: HashMap<String, String> = HashMap::new();
         tag_map.insert("file_path".to_string(), i.clone());
         tag_map.insert("file_name".to_string(), Path::new(&i.clone()).file_name().unwrap_or(&OsStr::new("")).to_string_lossy().to_string());
