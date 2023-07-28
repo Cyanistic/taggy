@@ -4,34 +4,19 @@ use std::{collections::HashMap, path::Path, fs::File, io::Read, ffi::OsStr};
 
 use base64::{Engine as _, engine::general_purpose, prelude::BASE64_STANDARD};
 use serresult::SerResult;
-use taggy::*;
-use clap::Parser;
 use audiotags::{Tag, Picture, MimeType};
 mod serresult;
+mod cli;
 
 fn main() {
-    let args = Args::parse();
     
-    match args{ 
-    Args{
-        file: None,
-        print: false,
-        genre: _,
-        year: _,
-        title: _,
-        artist: _, ..
-    } => tauri::Builder::default()
+    if std::env::args().count() == 1{
+        tauri::Builder::default()
         .invoke_handler(tauri::generate_handler![load_dir, image_to_data, save_song, search])
         .run(tauri::generate_context!())
-        .expect("error while running tauri application"),
-    _ => {
-            if args.file.is_some(){
-                use_args(args);
-            }
-            else{
-                println!("No files specified");
-            }
-        }
+        .expect("error while running tauri application");
+    }else{
+        cli::parse();
     }
 }
 
