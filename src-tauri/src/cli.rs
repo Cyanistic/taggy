@@ -19,16 +19,22 @@ pub fn parse() {
         "-d", "--disc-number",
         "-D", "--total-discs",
         "-p", "--print"];
+
+    const FLAGS: [&str; 4] = [
+        "-h", "--help",
+        "-p", "--print"];
     let temp: Vec<String> = std::env::args().collect();
     let mut args: Vec<&str> = temp.iter().map(|x| x.as_str()).collect();
+    // Add empty string after argument if the argument is a flag for easier error handling
     { let mut count: usize = 0;
         for (ind, val) in args.clone().iter().enumerate(){ 
-            if *val == "--print" || *val == "-p" || *val == "-h" || *val == "--help"{
+            if FLAGS.contains(val){
                 args.insert(ind+count+1, "");
                 count += 1;
             }
         }
     }
+    // Check if each argument is a valid command
     for i in (1..args.len()).step_by(2){
         if !AVAILABLE_COMMANDS.contains(&args[i]) {
             eprintln!("Invalid argument: '{}', exiting...", args[i]);
@@ -38,12 +44,17 @@ pub fn parse() {
             exit(1);
         }
     }
+    // Check if the number of arguments is even, as each argument has a corresponding value
     if args.len() % 2 == 0 {
         eprintln!("Invalid number of arguments");
         exit(2);
     }
+    // Define file and path variables to store file and path as they can be modified within the
+    // same command.
     let mut file: Option<Box<dyn AudioTag>> = None;
     let mut path: PathBuf = PathBuf::new();
+    
+    // Iterate over every argument and perform the corresponding action
     for i in (1..args.len()).step_by(2){
         match args[i] {
         "-h" | "--help" => print_help(),
@@ -57,9 +68,12 @@ pub fn parse() {
         "-a" | "--artist" => file.as_mut().expect("No file provided").set_artist(args[i+1]),
         "-t" | "--title" => file.as_mut().expect("No file provided").set_title(args[i+1]),
         "-c" | "--cover" => {
+            // Attempt to copy cover from audio file
             if let Ok(k) = Tag::new().read_from_path(PathBuf::from(args[i+1])){
                 file.as_mut().expect("No file provided").set_album_cover(k.album_cover().expect("Audio provided audio file has no cover"));
-            }else{
+            }
+            // File is not an audio file, so attempt to read it as an image
+            else{
                 let mut temp = File::open(args[i+1]).unwrap();
                 let mut buf = Vec::new();
                 temp.read_to_end(&mut buf).unwrap();
