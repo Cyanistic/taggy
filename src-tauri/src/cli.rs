@@ -21,15 +21,13 @@ pub fn parse() {
         "-p", "--print"];
     let temp: Vec<String> = std::env::args().collect();
     let mut args: Vec<&str> = temp.iter().map(|x| x.as_str()).collect();
-
-    for (ind, val) in args.clone().iter().enumerate(){ 
-        if *val == "--print" || *val == "-p" || *val == "-h" || *val == "--help"{
-            args.insert(ind+1, "")
+    { let mut count: usize = 0;
+        for (ind, val) in args.clone().iter().enumerate(){ 
+            if *val == "--print" || *val == "-p" || *val == "-h" || *val == "--help"{
+                args.insert(ind+count+1, "");
+                count += 1;
+            }
         }
-    }
-    if args.len() % 2 == 0 {
-        eprintln!("Invalid number of arguments");
-        exit(1);
     }
     for i in (1..args.len()).step_by(2){
         if !AVAILABLE_COMMANDS.contains(&args[i]) {
@@ -39,6 +37,10 @@ pub fn parse() {
             }
             exit(1);
         }
+    }
+    if args.len() % 2 == 0 {
+        eprintln!("Invalid number of arguments");
+        exit(2);
     }
     let mut file: Option<Box<dyn AudioTag>> = None;
     let mut path: PathBuf = PathBuf::new();
@@ -87,21 +89,22 @@ pub fn parse() {
         "-p" | "--print" => {
             if file.is_none(){
                 eprintln!("No files provided");
-                exit(1);
+                exit(3);
             }
-            println!("Artist: {}", file.as_ref().unwrap().artist().unwrap_or(""));
-            println!("Title: {}", file.as_ref().unwrap().title().unwrap_or(""));
-            println!("Genre: {}", file.as_ref().unwrap().genre().unwrap_or(""));
-            println!("Year: {}", file.as_ref().unwrap().year().unwrap_or(0));
-            println!("Album Title: {}", file.as_ref().unwrap().album_title().unwrap_or(""));
+            println!("Artist:       {}", file.as_ref().unwrap().artist().unwrap_or(""));
+            println!("Title:        {}", file.as_ref().unwrap().title().unwrap_or(""));
+            println!("Genre:        {}", file.as_ref().unwrap().genre().unwrap_or(""));
+            println!("Year:         {}", file.as_ref().unwrap().year().unwrap_or(0));
+            println!("Album Title:  {}", file.as_ref().unwrap().album_title().unwrap_or(""));
             println!("Album Artist: {}", file.as_ref().unwrap().album_artist().unwrap_or(""));
-            println!("Discs: {}/{}", file.as_ref().unwrap().disc_number().unwrap_or(0), file.as_ref().unwrap().total_discs().unwrap_or(0));
-            println!("Tracks: {}/{}", file.as_ref().unwrap().track_number().unwrap_or(0), file.as_ref().unwrap().total_tracks().unwrap_or(0));
+            println!("Discs:        {}/{}", file.as_ref().unwrap().disc_number().unwrap_or(0), file.as_ref().unwrap().total_discs().unwrap_or(0));
+            println!("Tracks:       {}/{}\n", file.as_ref().unwrap().track_number().unwrap_or(0), file.as_ref().unwrap().total_tracks().unwrap_or(0));
         },
         _ => ()
         }
     }
     file.unwrap().write_to_path(path.as_os_str().to_str().unwrap()).unwrap();
+    exit(0);
 }
 
 fn print_help(){
@@ -125,6 +128,6 @@ fn print_help(){
     println!("{}-D, --total-discs  [TOTAL DISCS]    {}Sets the new total discs for the provided audio file.", BOLD, RES);
     println!("{}-n, --track-number [TRACK NUMBER]   {}Sets the new track number for the provided audio file.", BOLD, RES);
     println!("{}-R, --total-tracks [TOTAL TRACKS]   {}Sets the new total tracks for the provided audio file.", BOLD, RES);
-    println!("{}-p, --print                         {}Prints all tags of the provided file.", BOLD, RES);
+    println!("{}-p, --print                         {}Prints all tags of the provided file.\n", BOLD, RES);
     exit(0)
 }
