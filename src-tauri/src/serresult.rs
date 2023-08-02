@@ -1,6 +1,6 @@
 use std::{fmt::Display, num::ParseIntError, str::ParseBoolError};
 
-use serde::{ser::Serializer, Deserialize, Serialize};
+use serde::{ser::Serializer, Serialize};
 
 // create the error type that represents all errors possible in our program
 #[derive(Debug, thiserror::Error)]

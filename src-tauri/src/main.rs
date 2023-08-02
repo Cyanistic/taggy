@@ -46,7 +46,7 @@ fn load_dir(music_dir: String, recursive: bool) -> SerResult<Vec<HashMap<String,
         if let Ok(entry) = entry{
             if let Ok(file_type) = entry.file_type(){
                 if file_type.is_file(){
-                    if let Some(file_name) = entry.file_name().to_str(){
+                    if let Some(_file_name) = entry.file_name().to_str(){
                         files.push(entry.path().to_str().unwrap().to_string());
                     }
                 }else if recursive && file_type.is_dir(){
@@ -58,7 +58,7 @@ fn load_dir(music_dir: String, recursive: bool) -> SerResult<Vec<HashMap<String,
     let mut tags: Vec<HashMap<String, String>> = Vec::new();
     for i in files{
         let tag; 
-        let file_name = Path::new(&i.clone()).file_name().unwrap_or(&OsStr::new("")).to_string_lossy().to_string();
+        let file_name = Path::new(&i.clone()).file_name().unwrap_or(OsStr::new("")).to_string_lossy().to_string();
         if let Some(ind) = file_name.rfind('.'){
             match &file_name[ind+1..] {
                 "mp3" | "m4a" | "mp4" | "flac" => {
@@ -74,7 +74,7 @@ fn load_dir(music_dir: String, recursive: bool) -> SerResult<Vec<HashMap<String,
         
         let mut tag_map: HashMap<String, String> = HashMap::new();
         tag_map.insert("file_path".to_string(), i.clone());
-        tag_map.insert("file_name".to_string(), Path::new(&i.clone()).file_name().unwrap_or(&OsStr::new("")).to_string_lossy().to_string());
+        tag_map.insert("file_name".to_string(), Path::new(&i.clone()).file_name().unwrap_or(OsStr::new("")).to_string_lossy().to_string());
         tag_map.insert("title".to_string(),  tag.title().unwrap_or("").to_string());
         tag_map.insert("artist".to_string(), tag.artist().unwrap_or("").to_string());
         tag_map.insert("genre".to_string(), tag.genre().unwrap_or("").to_string());
@@ -118,7 +118,7 @@ fn image_to_data(file_path: String) -> SerResult<(String, String)>{
 fn save_song(song_data: HashMap<&str, &str>) -> SerResult<()>{    
     let path = *song_data.get("file_path").unwrap();
     let cover_type = *song_data.get("cover_type").unwrap();
-    let mut tag = Tag::new().read_from_path(&path)?;
+    let mut tag = Tag::new().read_from_path(path)?;
     for (key, val) in song_data.into_iter(){
         match key {
             "album_artist" => tag.set_album_artist(val),
