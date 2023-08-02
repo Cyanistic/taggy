@@ -10,7 +10,7 @@ mod cli;
 
 fn main() {
     
-    if std::env::args().count() == 1{
+    if std::env::args().count() == 1 || std::env::args().filter(|x| *x == String::from("--")).count() > 0{
         tauri::Builder::default()
         .invoke_handler(tauri::generate_handler![load_dir, image_to_data, save_song, search])
         .run(tauri::generate_context!())

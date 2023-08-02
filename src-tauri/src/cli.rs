@@ -138,6 +138,7 @@ fn print_help(){
     println!("{}-h, --help                          {}Print the help information.", BOLD, RES);
     println!("{}-r, --dry-run                       {}Modifications to all files are discarded after execution.", BOLD, RES);
     println!("                                      In most cases, this should be the first argument if you plan to use it, as it only applies to arguments provided after it.");
+    println!("{}--                                  {}Pass all arguments to the GUI version and run it.", BOLD, RES);
     println!("{}-f, --file         [FILE]           {}Sets the file to modify, this should be provided before the desired modifications.", BOLD, RES);
     println!("                                      Multiple files can be modified in the same command.");
     println!("{}-t, --title        [TITLE]          {}Sets the new title for the provided audio file.", BOLD, RES);
