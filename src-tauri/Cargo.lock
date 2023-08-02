@@ -2548,6 +2548,7 @@ dependencies = [
  "anyhow",
  "audiotags",
  "base64 0.21.2",
+ "libc",
  "serde",
  "serde_json",
  "tauri",

@@ -3,7 +3,7 @@ use std::{process::exit, path::PathBuf, fs::File, io::{Read, Write}};
 use audiotags::{AudioTag, Tag, MimeType, Picture};
 
 pub fn parse() {
-    const AVAILABLE_COMMANDS: [&str; 30] = [
+    const AVAILABLE_COMMANDS: [&str; 32] = [
         "-h", "--help", 
         "-f", "--file",
         "-a", "--artist",
@@ -18,11 +18,14 @@ pub fn parse() {
         "-R", "--total-tracks",
         "-d", "--disc-number",
         "-D", "--total-discs",
-        "-p", "--print"];
+        "-p", "--print",
+        "-r", "--dry-run",
+    ];
 
-    const FLAGS: [&str; 4] = [
+    const FLAGS: [&str; 6] = [
         "-h", "--help",
-        "-p", "--print"];
+        "-p", "--print",
+        "-r", "--dry-run"];
     let temp: Vec<String> = std::env::args().collect();
     let mut args: Vec<&str> = temp.iter().map(|x| x.as_str()).collect();
     // Add empty string after argument if the argument is a flag for easier error handling
@@ -53,13 +56,16 @@ pub fn parse() {
     // same command.
     let mut file: Option<Box<dyn AudioTag>> = None;
     let mut path: PathBuf = PathBuf::new();
+    let mut dry_run: bool = false;
+    reset_sigpipe();
     
     // Iterate over every argument and perform the corresponding action
     for i in (1..args.len()).step_by(2){
         match args[i] {
         "-h" | "--help" => print_help(),
+        "-r" | "--dry-run" => dry_run = true,
         "-f" | "--file" => {
-            if file.as_ref().is_some(){ 
+            if file.as_ref().is_some() && !dry_run {
                 file.unwrap().write_to_path(path.as_path().to_str().unwrap()).unwrap();
             }
             path = PathBuf::from(args[i+1]);
@@ -117,7 +123,9 @@ pub fn parse() {
         _ => ()
         }
     }
-    file.unwrap().write_to_path(path.as_os_str().to_str().unwrap()).unwrap();
+    if !dry_run{
+        file.unwrap().write_to_path(path.as_os_str().to_str().unwrap()).unwrap();
+    }
     exit(0);
 }
 
@@ -128,6 +136,8 @@ fn print_help(){
     println!("{}A simple audio tag manipulator. Running with no arguments opens GUI.\nNote that argument order is respected.{}", BOLD, RES);
     println!("{}Usage: taggy [OPTIONS]{}", BOLD, RES);
     println!("{}-h, --help                          {}Print the help information.", BOLD, RES);
+    println!("{}-r, --dry-run                       {}Modifications to all files are discarded after execution.", BOLD, RES);
+    println!("                                      In most cases, this should be the first argument if you plan to use it, as it only applies to arguments provided after it.");
     println!("{}-f, --file         [FILE]           {}Sets the file to modify, this should be provided before the desired modifications.", BOLD, RES);
     println!("                                      Multiple files can be modified in the same command.");
     println!("{}-t, --title        [TITLE]          {}Sets the new title for the provided audio file.", BOLD, RES);
@@ -144,4 +154,17 @@ fn print_help(){
     println!("{}-R, --total-tracks [TOTAL TRACKS]   {}Sets the new total tracks for the provided audio file.", BOLD, RES);
     println!("{}-p, --print                         {}Prints all tags of the provided file.\n", BOLD, RES);
     exit(0)
+}
+
+// Add piping support on unix-like systems
+#[cfg(unix)]
+fn reset_sigpipe() {
+    unsafe {
+        libc::signal(libc::SIGPIPE, libc::SIG_DFL);
+    }
+}
+
+#[cfg(not(unix))]
+fn reset_sigpipe() {
+    // no-op
 }
