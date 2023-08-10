@@ -1,4 +1,4 @@
-use std::{process::exit, path::PathBuf, fs::File, io::{Read, Write}};
+use std::{process::exit, path::PathBuf, fs::File, io::{Read, Write, IsTerminal}};
 
 use audiotags::{AudioTag, Tag, MimeType, Picture};
 
@@ -95,8 +95,14 @@ pub fn parse() {
         },
         "-e" | "--extract-cover" => {
             let cover = file.as_ref().expect("No file provided").album_cover().expect("Unable to extract from file, as it has no cover").data;
-            let mut file = File::create(args[i+1]).unwrap();
-            file.write_all(cover).unwrap();
+            // Write cover to stdout or file
+            if args[i+1] == "-"{
+                std::io::stdout().write_all(cover).unwrap();
+            }
+            else{
+                let mut file = File::create(args[i+1]).unwrap();
+                file.write_all(cover).unwrap();
+            }
         },
         "-T" | "--album-title" => file.as_mut().expect("No file provided").set_album_title(args[i+1]),
         "-A" | "--album-artist" => file.as_mut().expect("No file provided").set_album_artist(args[i+1]),
@@ -133,27 +139,31 @@ fn print_help(){
     const BOLD: &str = "\x1b[1m";
     const UND: &str = "\x1b[4m";
     const RES: &str = "\x1b[0m";
-    println!("{}A simple audio tag manipulator. Running with no arguments opens GUI.\nNote that argument order is respected.{}", BOLD, RES);
-    println!("{}Usage: taggy [OPTIONS]{}", BOLD, RES);
-    println!("{}-h, --help                          {}Print the help information.", BOLD, RES);
-    println!("{}-r, --dry-run                       {}Modifications to all files are discarded after execution.", BOLD, RES);
-    println!("                                      In most cases, this should be the first argument if you plan to use it, as it only applies to arguments provided after it.");
-    println!("{}--                                  {}Passes all arguments to the GUI version and runs it.", BOLD, RES);
-    println!("{}-f, --file         [FILE]           {}Sets the file to modify, this should be provided before the desired modifications.", BOLD, RES);
-    println!("                                      Multiple files can be modified in the same command.");
-    println!("{}-t, --title        [TITLE]          {}Sets the new title for the provided audio file.", BOLD, RES);
-    println!("{}-a, --artist       [ARTIST]         {}Sets the new artist for the provided audio file.", BOLD, RES);
-    println!("{}-c, --cover        [FILE]           {}Sets the new cover for the provided audio file.", BOLD, RES);
-    println!("                                      This can either be an image file or another audio file with a cover");
-    println!("{}-T, --album-title  [ALBUM TITLE]    {}Sets the new album title for the provided audio file.", BOLD, RES);
-    println!("{}-A, --album-artist [ALBUM ARTIST]   {}Sets the new album artist for the provided audio file.", BOLD, RES);
-    println!("{}-y, --year         [YEAR]           {}Sets the new year for the provided audio file.", BOLD, RES);
-    println!("{}-g, --genre        [GENRE]          {}Sets the new genre for the provided audio file.", BOLD, RES);
-    println!("{}-d, --disc-number  [DISC NUMBER]    {}Sets the new disc number for the provided audio file.", BOLD, RES);
-    println!("{}-D, --total-discs  [TOTAL DISCS]    {}Sets the new total discs for the provided audio file.", BOLD, RES);
-    println!("{}-n, --track-number [TRACK NUMBER]   {}Sets the new track number for the provided audio file.", BOLD, RES);
-    println!("{}-R, --total-tracks [TOTAL TRACKS]   {}Sets the new total tracks for the provided audio file.", BOLD, RES);
-    println!("{}-p, --print                         {}Prints all tags of the provided file.\n", BOLD, RES);
+    if std::io::stdout().is_terminal() {
+        println!("{}A simple audio tag manipulator. Running with no arguments opens GUI.\nNote that argument order is respected.{}", BOLD, RES);
+        println!("{}Usage: taggy [OPTIONS]{}", BOLD, RES);
+        println!("{}-h, --help                           {}Print the help information.", BOLD, RES);
+        println!("{}-r, --dry-run                        {}Modifications to all files are discarded after execution.", BOLD, RES);
+        println!("                                       In most cases, this should be the first argument if you plan to use it, as it only applies to arguments provided after it.");
+        println!("{}--                                   {}Passes all arguments to the GUI version and runs it.", BOLD, RES);
+        println!("{}-f, --file          [FILE]           {}Sets the file to modify, this should be provided before the desired modifications.", BOLD, RES);
+        println!("                                       Multiple files can be modified in the same command.");
+        println!("{}-t, --title         [TITLE]          {}Sets the new title for the provided audio file.", BOLD, RES);
+        println!("{}-a, --artist        [ARTIST]         {}Sets the new artist for the provided audio file.", BOLD, RES);
+        println!("{}-c, --cover         [FILE]           {}Sets the new cover for the provided audio file.", BOLD, RES);
+        println!("                                       This can either be an image file or another audio file with a cover");
+        println!("{}-e, --extract-cover [FILE]           {}Extract the cover of the provided audio file into FILE.", BOLD, RES);
+        println!("                                       If FILE is - the cover data is printed to stdout.");
+        println!("{}-T, --album-title   [ALBUM TITLE]    {}Sets the new album title for the provided audio file.", BOLD, RES);
+        println!("{}-A, --album-artist  [ALBUM ARTIST]   {}Sets the new album artist for the provided audio file.", BOLD, RES);
+        println!("{}-y, --year          [YEAR]           {}Sets the new year for the provided audio file.", BOLD, RES);
+        println!("{}-g, --genre         [GENRE]          {}Sets the new genre for the provided audio file.", BOLD, RES);
+        println!("{}-d, --disc-number   [DISC NUMBER]    {}Sets the new disc number for the provided audio file.", BOLD, RES);
+        println!("{}-D, --total-discs   [TOTAL DISCS]    {}Sets the new total discs for the provided audio file.", BOLD, RES);
+        println!("{}-n, --track-number  [TRACK NUMBER]   {}Sets the new track number for the provided audio file.", BOLD, RES);
+        println!("{}-R, --total-tracks  [TOTAL TRACKS]   {}Sets the new total tracks for the provided audio file.", BOLD, RES);
+        println!("{}-p, --print                         {}Prints all tags of the provided file.\n", BOLD, RES);
+    }
     exit(0)
 }
 
