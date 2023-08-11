@@ -3,8 +3,9 @@ use std::{process::exit, path::PathBuf, fs::File, io::{Read, Write, IsTerminal}}
 use audiotags::{AudioTag, Tag, MimeType, Picture};
 
 pub fn parse() {
-    const AVAILABLE_COMMANDS: [&str; 32] = [
+    const AVAILABLE_COMMANDS: [&str; 34] = [
         "-h", "--help", 
+        "-V", "--version",
         "-f", "--file",
         "-a", "--artist",
         "-t", "--title",
@@ -22,8 +23,9 @@ pub fn parse() {
         "-r", "--dry-run",
     ];
 
-    const FLAGS: [&str; 6] = [
+    const FLAGS: [&str; 8] = [
         "-h", "--help",
+        "-V", "--version",
         "-p", "--print",
         "-r", "--dry-run"];
     let temp: Vec<String> = std::env::args().collect();
@@ -63,6 +65,7 @@ pub fn parse() {
     for i in (1..args.len()).step_by(2){
         match args[i] {
         "-h" | "--help" => print_help(),
+        "-V" | "--version" => println!("{}", env!("CARGO_PKG_VERSION")),
         "-r" | "--dry-run" => dry_run = true,
         "-f" | "--file" => {
             if file.as_ref().is_some() && !dry_run {
@@ -140,9 +143,11 @@ fn print_help(){
     const UND: &str = "\x1b[4m";
     const RES: &str = "\x1b[0m";
     if std::io::stdout().is_terminal() {
-        println!("{}A simple audio tag manipulator. Running with no arguments opens GUI.\nNote that argument order is respected.{}", BOLD, RES);
-        println!("{}Usage: taggy [OPTIONS]{}", BOLD, RES);
+        println!("{}A simple audio tag manipulator. Running with no arguments opens GUI.\nNote that argument order is respected.{}\n", BOLD, RES);
+        println!("{}{}Usage:{} {}taggy [OPTIONS]{}\n", BOLD, UND, RES, BOLD, RES);
+        println!("{}{}OPTIONS:{}", BOLD, UND, RES);
         println!("{}-h, --help                           {}Print the help information.", BOLD, RES);
+        println!("{}-V, --version                        {}Print the version information.", BOLD, RES);
         println!("{}-r, --dry-run                        {}Modifications to all files are discarded after execution.", BOLD, RES);
         println!("                                       In most cases, this should be the first argument if you plan to use it, as it only applies to arguments provided after it.");
         println!("{}--                                   {}Passes all arguments to the GUI version and runs it.", BOLD, RES);
@@ -162,11 +167,13 @@ fn print_help(){
         println!("{}-D, --total-discs   [TOTAL DISCS]    {}Sets the new total discs for the provided audio file.", BOLD, RES);
         println!("{}-n, --track-number  [TRACK NUMBER]   {}Sets the new track number for the provided audio file.", BOLD, RES);
         println!("{}-R, --total-tracks  [TOTAL TRACKS]   {}Sets the new total tracks for the provided audio file.", BOLD, RES);
-        println!("{}-p, --print                         {}Prints all tags of the provided file.\n", BOLD, RES);
+        println!("{}-p, --print                         {}Prints all tags of the provided file.", BOLD, RES);
     }else{
-        println!("A simple audio tag manipulator. Running with no arguments opens GUI.\nNote that argument order is respected.");
-        println!("Usage: taggy [OPTIONS]");
+        println!("A simple audio tag manipulator. Running with no arguments opens GUI.\nNote that argument order is respected.\n");
+        println!("Usage: taggy [OPTIONS]\n");
+        println!("OPTIONS:");
         println!("-h, --help                           Print the help information.");
+        println!("-V, --version                        Print the version information.");
         println!("-r, --dry-run                        Modifications to all files are discarded after execution.");
         println!("                                     In most cases, this should be the first argument if you plan to use it, as it only applies to arguments provided after it.");
         println!("--                                   Passes all arguments to the GUI version and runs it.");
@@ -186,7 +193,7 @@ fn print_help(){
         println!("-D, --total-discs   [TOTAL DISCS]    Sets the new total discs for the provided audio file.");
         println!("-n, --track-number  [TRACK NUMBER]   Sets the new track number for the provided audio file.");
         println!("-R, --total-tracks  [TOTAL TRACKS]   Sets the new total tracks for the provided audio file.");
-        println!("-p, --print                         Prints all tags of the provided file.\n");
+        println!("-p, --print                         Prints all tags of the provided file.");
     }
     exit(0)
 }
