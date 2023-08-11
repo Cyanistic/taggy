@@ -163,6 +163,30 @@ fn print_help(){
         println!("{}-n, --track-number  [TRACK NUMBER]   {}Sets the new track number for the provided audio file.", BOLD, RES);
         println!("{}-R, --total-tracks  [TOTAL TRACKS]   {}Sets the new total tracks for the provided audio file.", BOLD, RES);
         println!("{}-p, --print                         {}Prints all tags of the provided file.\n", BOLD, RES);
+    }else{
+        println!("A simple audio tag manipulator. Running with no arguments opens GUI.\nNote that argument order is respected.");
+        println!("Usage: taggy [OPTIONS]");
+        println!("-h, --help                           Print the help information.");
+        println!("-r, --dry-run                        Modifications to all files are discarded after execution.");
+        println!("                                     In most cases, this should be the first argument if you plan to use it, as it only applies to arguments provided after it.");
+        println!("--                                   Passes all arguments to the GUI version and runs it.");
+        println!("-f, --file          [FILE]           Sets the file to modify, this should be provided before the desired modifications.");
+        println!("                                     Multiple files can be modified in the same command.");
+        println!("-t, --title         [TITLE]          Sets the new title for the provided audio file.");
+        println!("-a, --artist        [ARTIST]         Sets the new artist for the provided audio file.");
+        println!("-c, --cover         [FILE]           Sets the new cover for the provided audio file.");
+        println!("                                     This can either be an image file or another audio file with a cover");
+        println!("-e, --extract-cover [FILE]           Extract the cover of the provided audio file into FILE.");
+        println!("                                     If FILE is - the cover data is printed to stdout.");
+        println!("-T, --album-title   [ALBUM TITLE]    Sets the new album title for the provided audio file.");
+        println!("-A, --album-artist  [ALBUM ARTIST]   Sets the new album artist for the provided audio file.");
+        println!("-y, --year          [YEAR]           Sets the new year for the provided audio file.");
+        println!("-g, --genre         [GENRE]          Sets the new genre for the provided audio file.");
+        println!("-d, --disc-number   [DISC NUMBER]    Sets the new disc number for the provided audio file.");
+        println!("-D, --total-discs   [TOTAL DISCS]    Sets the new total discs for the provided audio file.");
+        println!("-n, --track-number  [TRACK NUMBER]   Sets the new track number for the provided audio file.");
+        println!("-R, --total-tracks  [TOTAL TRACKS]   Sets the new total tracks for the provided audio file.");
+        println!("-p, --print                         Prints all tags of the provided file.\n");
     }
     exit(0)
 }
