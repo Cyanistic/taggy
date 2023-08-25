@@ -65,7 +65,10 @@ pub fn parse() {
     for i in (1..args.len()).step_by(2){
         match args[i] {
         "-h" | "--help" => print_help(),
-        "-V" | "--version" => println!("{}", env!("CARGO_PKG_VERSION")),
+        "-V" | "--version" => {
+            println!("{}", env!("CARGO_PKG_VERSION"));
+            exit(0);
+            },
         "-r" | "--dry-run" => dry_run = true,
         "-f" | "--file" => {
             if file.as_ref().is_some() && !dry_run {
