@@ -1,5 +1,6 @@
 <h1 align="center">Taggy</h1>
-<p align="center"> <img src="https://badgen.net/github/license/Cyanistic/taggy"><img src="https://badgen.net/github/stars/cyanistic/taggy"></p>
+<p align="center"> <img src="./src-tauri/icons/taggy.png" width="128" height="128"></p>
+<p align="center"> <img src="https://badgen.net/github/license/Cyanistic/taggy"><img src="https://badgen.net/github/stars/Cyanistic/taggy"></p>
 
 <h2 align="center">A simple CLI and GUI tool for tagging audio files. Built with Tauri.</h2>
 
@@ -36,11 +37,11 @@ OPTIONS:
 ```
 
 # Building
-Building taggy requires npm and cargo.
+Building taggy requires npm, cargo, and the dependencies listed for [tauri](https://tauri.app/v1/guides/getting-started/prerequisites).
 ```
 git clone https://github.com/Cyanistic/taggy.git
 cd taggy
 npm install
 npm run tauri build
 ```
-The binary after building, the binary will be in the `./src-tauri/target/release` folder
+After building, the binary will be in the `./src-tauri/target/release` folder
