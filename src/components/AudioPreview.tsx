@@ -39,17 +39,24 @@ export default function AudioPreview(props: AudioPreviewProps) {
         <div class="flex flex-col items-center">
           {/* Album Art */}
           <div class="mb-4 w-48 h-48 relative">
-            {props.file.cover ? (
+            <Show
+              when={props.file.cover}
+              fallback={
+                <div class="w-full h-full bg-muted rounded-md flex items-center justify-center">
+                  <Music class="h-16 w-16 text-muted-foreground" />
+                </div>
+              }
+            >
               <img
-                src={props.file.cover || "/placeholder.svg"}
+                src={
+                  props.file.cover
+                    ? `data:image/jpg;base64,${props.file.cover}`
+                    : "/placeholder.svg"
+                }
                 alt={`${props.file.albumTitle} cover`}
                 class="w-full h-full object-cover rounded-md"
               />
-            ) : (
-              <div class="w-full h-full bg-muted rounded-md flex items-center justify-center">
-                <Music class="h-16 w-16 text-muted-foreground" />
-              </div>
-            )}
+            </Show>
           </div>
 
           {/* Track Info */}

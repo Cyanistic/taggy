@@ -2,7 +2,7 @@ import { createSignal } from "solid-js";
 import logo from "./assets/logo.svg";
 import { invoke } from "@tauri-apps/api/core";
 import "@/styles/globals.css";
-import { TagMenu } from "./components/AudioTagger";
+import { TagMenu } from "./components/TagMenu";
 
 function App() {
   return <TagMenu />;

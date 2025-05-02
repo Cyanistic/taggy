@@ -7,7 +7,7 @@ import { TextField, TextFieldRoot } from "./ui/textfield";
 interface AudioListProps {
   files?: Record<string, AudioFile>;
   selectedFile?: string;
-  onSelect?: (file: AudioFile) => void;
+  onSelect?: (path: string) => void;
 }
 
 export default function AudioList(props: AudioListProps) {
@@ -46,7 +46,7 @@ export default function AudioList(props: AudioListProps) {
               <AudioRow
                 file={file}
                 selected={file.path === props.selectedFile}
-                onSelect={() => props.onSelect?.(file)}
+                onSelect={() => props.onSelect?.(file.path)}
               />
             )}
           </For>
