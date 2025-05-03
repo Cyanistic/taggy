@@ -73,8 +73,9 @@ export default function AudioPreview(props: AudioPreviewProps) {
             </div>
             <Slider
               value={[currentTime()]}
-              max={duration}
               step={1}
+              minValue={1}
+              maxValue={duration}
               onChange={(value) => setCurrentTime(value[0])}
               class="w-full"
             />
@@ -101,7 +102,13 @@ export default function AudioPreview(props: AudioPreviewProps) {
             </div>
             <div class="flex items-center gap-2 mt-2">
               <Volume2 class="h-4 w-4 text-muted-foreground" />
-              <Slider defaultValue={[80]} max={100} step={1} class="w-24" />
+              <Slider
+                defaultValue={[80]}
+                minValue={0}
+                maxValue={100}
+                step={1}
+                class="w-24"
+              />
             </div>
           </div>
         </div>

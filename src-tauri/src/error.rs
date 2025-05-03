@@ -10,6 +10,7 @@ pub enum AppError {
     IoError(#[from] std::io::Error),
     AudioError(#[from] audiotags::Error),
     WalkDirError(#[from] walkdir::Error),
+    TauriError(#[from] tauri::Error),
     UserError(String),
 }
 
@@ -28,6 +29,7 @@ impl Display for AppError {
         match self {
             AppError::IoError(err) => write!(f, "IO error: {}", err),
             AppError::AudioError(err) => write!(f, "Audio error: {}", err),
+            AppError::TauriError(err) => write!(f, "Tauri error: {}", err),
             AppError::WalkDirError(err) => write!(f, "WalkDir error: {}", err),
             AppError::UserError(err) => write!(f, "{}", err),
         }

@@ -4,10 +4,11 @@ import {
   useContext,
   JSX,
   Accessor,
+  onMount,
 } from "solid-js";
 import { AudioFile } from "@/types";
 import { open } from "@tauri-apps/plugin-dialog";
-import { invoke } from "@tauri-apps/api/core";
+import { Channel, invoke } from "@tauri-apps/api/core";
 
 interface AppContextValue {
   audioFiles: Accessor<Record<string, AudioFile>>;
@@ -18,6 +19,7 @@ interface AppContextValue {
   addAudioDirectory: () => Promise<void>;
 }
 
+type Result<T, E = unknown> = { Ok: T; Err: null } | { Ok: null; Err: E };
 const AppContext = createContext<AppContextValue>();
 
 export function AppProvider(props: { children: JSX.Element }) {
@@ -28,6 +30,20 @@ export function AppProvider(props: { children: JSX.Element }) {
   const [selectedAudioFile, updateSelectedAudioFile] =
     createSignal<AudioFile | null>(null);
   const [audioDirectories, setAudioDirectories] = createSignal<string[]>([]);
+  let onFileProcessed!: Channel<Result<AudioFile>>;
+  onMount(() => {
+    onFileProcessed = new Channel<Result<AudioFile>>((result) => {
+      if (result.Ok) {
+        const audioFile = result.Ok;
+        setAudioFiles((prev) => ({
+          ...prev,
+          [audioFile.path]: audioFile,
+        }));
+      } else {
+        console.error(result.Err);
+      }
+    });
+  });
 
   const setSelectedFile = (file: string | null) => {
     updateSelectedFile(file);
@@ -43,6 +59,7 @@ export function AppProvider(props: { children: JSX.Element }) {
     if (!selected) return;
     const newFiles: Record<string, AudioFile> = await invoke("load_audio_dir", {
       directory: selected,
+      onFileProcessed,
     });
     setAudioFiles({ ...audioFiles(), ...newFiles });
     setAudioDirectories([...audioDirectories(), selected]);

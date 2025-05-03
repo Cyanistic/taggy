@@ -20,7 +20,7 @@ export function TagMenu() {
   return (
     <div class="flex flex-col md:flex-row h-screen">
       {/* Left side - Preview and Tag Editor */}
-      <div class="w-full md:w-1/2 p-4 border-r border-border overflow-y-auto">
+      <div class="w-full h-screen md:w-1/2 p-4 border-r border-border overflow-y-auto">
         <Show
           when={audioDirectories().length}
           fallback={
