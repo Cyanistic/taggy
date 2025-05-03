@@ -1,4 +1,3 @@
-import { AudioFile } from "@/types";
 import {
   Card,
   CardContent,
@@ -9,20 +8,20 @@ import {
 import { Music, Save, Upload, X } from "lucide-solid";
 import { Button } from "./ui/button";
 import { TextField, TextFieldLabel, TextFieldRoot } from "./ui/textfield";
-import { createSignal, JSX, Show } from "solid-js";
+import { createEffect, createSignal, JSX, Show } from "solid-js";
+import { useAppContext } from "./AppContext";
 
-interface TagEditorProps {
-  file: AudioFile;
-}
+export default function TagEditor() {
+  const { selectedAudioFile } = useAppContext();
+  const [formData, setFormData] = createSignal(selectedAudioFile()!);
+  createEffect(() => {
+    console.log(selectedAudioFile());
+    setFormData(selectedAudioFile()!);
+  });
 
-export default function TagEditor(props: TagEditorProps) {
-  const [formData, setFormData] = createSignal({ ...props.file });
-
-  const handleInputChange: JSX.ChangeEventHandler<HTMLInputElement, Event> = (
-    e,
-  ) => {
+  const handleInputInput: JSX.EventHandler<HTMLInputElement, Event> = (e) => {
     const { name, value } = e.currentTarget;
-    setFormData((prev) => ({ ...prev, [name]: value }));
+    setFormData((prev) => ({ ...prev, [name]: value || undefined }));
   };
 
   const handleSave: JSX.EventHandler<HTMLButtonElement, MouseEvent> = (
@@ -49,7 +48,7 @@ export default function TagEditor(props: TagEditorProps) {
                 id="title"
                 name="title"
                 value={formData().title}
-                onChange={handleInputChange}
+                onInput={handleInputInput}
                 type="text"
               />
             </TextFieldRoot>
@@ -62,7 +61,7 @@ export default function TagEditor(props: TagEditorProps) {
                 id="artist"
                 name="artist"
                 value={formData().artist}
-                onChange={handleInputChange}
+                onInput={handleInputInput}
                 type="text"
               />
             </TextFieldRoot>
@@ -75,7 +74,7 @@ export default function TagEditor(props: TagEditorProps) {
                 id="albumTitle"
                 name="albumTitle"
                 value={formData().albumTitle}
-                onChange={handleInputChange}
+                onInput={handleInputInput}
                 type="text"
               />
             </TextFieldRoot>
@@ -88,7 +87,7 @@ export default function TagEditor(props: TagEditorProps) {
                 id="albumArtist"
                 name="albumArtist"
                 value={formData().albumArtist}
-                onChange={handleInputChange}
+                onInput={handleInputInput}
                 type="text"
               />
             </TextFieldRoot>
@@ -101,7 +100,7 @@ export default function TagEditor(props: TagEditorProps) {
                 id="year"
                 name="year"
                 value={formData().year}
-                onChange={handleInputChange}
+                onInput={handleInputInput}
                 type="number"
               />
             </TextFieldRoot>
@@ -114,7 +113,7 @@ export default function TagEditor(props: TagEditorProps) {
                 id="genre"
                 name="genre"
                 value={formData().genre}
-                onChange={handleInputChange}
+                onInput={handleInputInput}
                 type="text"
               />
             </TextFieldRoot>
@@ -161,10 +160,17 @@ export default function TagEditor(props: TagEditorProps) {
         </div>
       </CardContent>
       <CardFooter>
-        <Button onClick={handleSave}>
-          <Save class="h-4 w-4 mr-2" />
-          Save Changes
-        </Button>
+        <Show
+          when={
+            // Only show the save changes button if there are changes to be saved
+            JSON.stringify(formData()) !== JSON.stringify(selectedAudioFile())
+          }
+        >
+          <Button class="w-full" onClick={handleSave}>
+            <Save class="h-4 w-4 mr-2" />
+            Save Changes
+          </Button>
+        </Show>
       </CardFooter>
     </Card>
   );

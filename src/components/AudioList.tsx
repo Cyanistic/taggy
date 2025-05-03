@@ -1,8 +1,10 @@
 import { AudioFile } from "@/types";
-import { createSignal, For, Show } from "solid-js";
+import { createSignal, For } from "solid-js";
 import AudioRow from "./AudioRow";
-import { Search } from "lucide-solid";
+import { FolderPlus, Search } from "lucide-solid";
 import { TextField, TextFieldRoot } from "./ui/textfield";
+import { Button } from "./ui/button";
+import { useAppContext } from "./AppContext";
 
 interface AudioListProps {
   files?: Record<string, AudioFile>;
@@ -12,11 +14,17 @@ interface AudioListProps {
 
 export default function AudioList(props: AudioListProps) {
   const [searchQuery, setSearchQuery] = createSignal("");
+  const { addAudioDirectory } = useAppContext();
 
   return (
     <div class="flex flex-col h-full">
-      <div class="mb-4">
-        <h2 class="text-2xl font-bold mb-4">Audio Files</h2>
+      <div class="mb-4 flex flex-col justify-between">
+        <div class="flex justify-between">
+          <h2 class="text-2xl font-bold mb-4">Audio Files</h2>
+          <Button onClick={addAudioDirectory}>
+            <FolderPlus class="-mx-2" />
+          </Button>
+        </div>
         <div class="relative">
           <Search class="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
           <TextFieldRoot>

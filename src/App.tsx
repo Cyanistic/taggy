@@ -1,11 +1,13 @@
-import { createSignal } from "solid-js";
-import logo from "./assets/logo.svg";
-import { invoke } from "@tauri-apps/api/core";
 import "@/styles/globals.css";
 import { TagMenu } from "./components/TagMenu";
+import { AppProvider } from "./components/AppContext";
 
 function App() {
-  return <TagMenu />;
+  return (
+    <AppProvider>
+      <TagMenu />
+    </AppProvider>
+  );
 }
 
 export default App;
