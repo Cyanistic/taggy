@@ -14,6 +14,12 @@ importers:
       '@tailwindcss/vite':
         specifier: ^4.1.5
         version: 4.1.5(vite@6.3.4(@types/node@22.15.3)(jiti@2.4.2)(lightningcss@1.29.2))
+      '@tanstack/solid-pacer':
+        specifier: ^0.2.0
+        version: 0.2.0(solid-js@1.9.6)
+      '@tanstack/solid-virtual':
+        specifier: ^3.13.6
+        version: 3.13.6(solid-js@1.9.6)
       '@tauri-apps/api':
         specifier: ^2
         version: 2.5.0
@@ -680,6 +686,24 @@ packages:
     resolution: {integrity: sha512-FE1stRoqdHSb7RxesMfCXE8icwI1W6zGE/512ae3ZDrpkQYTTYeSyUJPRCjZd8CwVAhpDUbi1YR8pcZioFJQ/w==}
     peerDependencies:
       vite: ^5.2.0 || ^6
+
+  '@tanstack/pacer@0.2.0':
+    resolution: {integrity: sha512-fUJs3NpSwtAL/tfq8kuYdgvm9HbbJvHsOG6aHY2dFDfff0NBFNwjvyGreWZZRPs2zgoIbr4nOk+rRV7aQgmf+A==}
+    engines: {node: '>=18'}
+
+  '@tanstack/solid-pacer@0.2.0':
+    resolution: {integrity: sha512-KU6RLIPca0HYUCY3R0aubqEyO9JmnZC/k6O+CYUpmQ+3R7qzS3vSI7vVNc9HGHkzy3UJ/v73WPBgD7iykEJbQA==}
+    engines: {node: '>=18'}
+    peerDependencies:
+      solid-js: '>=1.9.5'
+
+  '@tanstack/solid-virtual@3.13.6':
+    resolution: {integrity: sha512-tD9BIRg0aSqQJ2Ek0mu6dUjluK+3nGNvqWLtwY7r0vJNNpIA4PsKMenhvD+h42qG3Xmi9jTqN2hDleS2kVUXNA==}
+    peerDependencies:
+      solid-js: ^1.3.0
+
+  '@tanstack/virtual-core@3.13.6':
+    resolution: {integrity: sha512-cnQUeWnhNP8tJ4WsGcYiX24Gjkc9ALstLbHcBj1t3E7EimN6n6kHH+DPV4PpDnuw00NApQp+ViojMj1GRdwYQg==}
 
   '@tauri-apps/api@2.5.0':
     resolution: {integrity: sha512-Ldux4ip+HGAcPUmuLT8EIkk6yafl5vK0P0c0byzAKzxJh7vxelVtdPONjfgTm96PbN24yjZNESY8CKo8qniluA==}
@@ -2066,6 +2090,20 @@ snapshots:
       '@tailwindcss/oxide': 4.1.5
       tailwindcss: 4.1.5
       vite: 6.3.4(@types/node@22.15.3)(jiti@2.4.2)(lightningcss@1.29.2)
+
+  '@tanstack/pacer@0.2.0': {}
+
+  '@tanstack/solid-pacer@0.2.0(solid-js@1.9.6)':
+    dependencies:
+      '@tanstack/pacer': 0.2.0
+      solid-js: 1.9.6
+
+  '@tanstack/solid-virtual@3.13.6(solid-js@1.9.6)':
+    dependencies:
+      '@tanstack/virtual-core': 3.13.6
+      solid-js: 1.9.6
+
+  '@tanstack/virtual-core@3.13.6': {}
 
   '@tauri-apps/api@2.5.0': {}
 

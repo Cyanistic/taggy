@@ -2,19 +2,27 @@ import { AudioFile } from "@/types";
 import { Card, CardContent } from "./ui/card";
 import { Music } from "lucide-solid";
 import { Show } from "solid-js";
+import { cn } from "@/libs/cn";
+import { JSX } from "solid-js/jsx-runtime";
 
 export interface AudioRowProps {
   file: AudioFile;
   selected?: boolean;
   onSelect?: () => void;
+  class?: string;
+  style?: JSX.CSSProperties;
 }
 
 export default function AudioRow(props: AudioRowProps) {
   return (
     <Card
-      class={`cursor-pointer transition-colors hover:bg-accent ${
-        props.selected ? "bg-accent" : ""
-      }`}
+      class={cn(
+        `cursor-pointer transition-colors hover:bg-accent ${
+          props.selected ? "bg-accent" : ""
+        }`,
+        props.class,
+      )}
+      style={props.style}
       onClick={() => props.onSelect?.()}
     >
       <CardContent class="p-3 flex items-center gap-3">
@@ -29,7 +37,9 @@ export default function AudioRow(props: AudioRowProps) {
           {(cover) => (
             <img
               src={
-                cover() ? `data:image/jpg;base64,${cover()}` : "/placeholder.svg"
+                cover()
+                  ? `data:image/jpg;base64,${cover()}`
+                  : "/placeholder.svg"
               }
               alt={`${props.file.albumTitle} cover`}
               class="w-12 h-12 object-cover rounded-md"

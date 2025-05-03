@@ -1,4 +1,3 @@
-import { AudioFile } from "@/types";
 import { Show } from "solid-js";
 import TagEditor from "./TagEditor";
 import AudioList from "./AudioList";

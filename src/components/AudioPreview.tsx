@@ -16,10 +16,6 @@ interface AudioPreviewProps {
   file: AudioFile;
 }
 
-interface AudioData {
-  duration: number;
-}
-
 export default function AudioPreview(props: AudioPreviewProps) {
   const [isPlaying, setIsPlaying] = createSignal(false);
   const [currentTime, setCurrentTime] = createSignal(0);

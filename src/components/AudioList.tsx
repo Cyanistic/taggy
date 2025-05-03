@@ -1,13 +1,15 @@
 import { AudioFile } from "@/types";
-import { createSignal, For } from "solid-js";
+import { createEffect, createSignal, For } from "solid-js";
 import AudioRow from "./AudioRow";
 import { FolderPlus, Search } from "lucide-solid";
 import { TextField, TextFieldRoot } from "./ui/textfield";
 import { Button } from "./ui/button";
 import { useAppContext } from "./AppContext";
+import { createVirtualizer } from "@tanstack/solid-virtual";
+import { createMemo } from "solid-js";
+import { createThrottledValue } from "@tanstack/solid-pacer/throttler";
 
 interface AudioListProps {
-  files?: Record<string, AudioFile>;
   selectedFile?: string;
   onSelect?: (path: string) => void;
 }
@@ -15,6 +17,33 @@ interface AudioListProps {
 export default function AudioList(props: AudioListProps) {
   const [searchQuery, setSearchQuery] = createSignal("");
   const { addAudioDirectory } = useAppContext();
+  const { audioFiles } = useAppContext();
+  const [filteredFiles, setFilteredFiles] = createSignal<AudioFile[]>(
+    Object.values(audioFiles()),
+  );
+
+  createEffect(() => {
+    setFilteredFiles(Object.values(audioFiles()));
+  });
+
+  let listRef!: HTMLDivElement;
+  const staticOptions = {
+    getScrollElement: () => listRef,
+    estimateSize: () => 72,
+    gap: 8,
+    overscan: 4,
+  };
+
+  const [throttled] = createThrottledValue(
+    () =>
+      createVirtualizer({
+        ...staticOptions,
+        count: filteredFiles().length,
+      }),
+    { wait: 500 },
+  );
+
+  const listVirtualizer = createMemo(() => throttled());
 
   return (
     <div class="flex flex-col h-full">
@@ -40,10 +69,13 @@ export default function AudioList(props: AudioListProps) {
           </TextFieldRoot>
         </div>
       </div>
-      <div class="flex-1 overflow-y-auto rounded-2xl">
-        <div class="space-y-2">
+      <div class="flex-1 overflow-y-auto rounded-2xl" ref={listRef}>
+        <div
+          class="relative w-full"
+          style={{ height: `${listVirtualizer().getTotalSize()}px` }}
+        >
           <For
-            each={props.files && Object.values(props.files)}
+            each={listVirtualizer().getVirtualItems()}
             fallback={
               <p class="text-center py-8 text-muted-foreground">
                 No audio files found
@@ -52,9 +84,15 @@ export default function AudioList(props: AudioListProps) {
           >
             {(file) => (
               <AudioRow
-                file={file}
-                selected={file.path === props.selectedFile}
-                onSelect={() => props.onSelect?.(file.path)}
+                class="absolute top-0 left-0 w-full"
+                style={{ transform: `translateY(${file.start}px)` }}
+                file={filteredFiles()[file.index]}
+                selected={
+                  filteredFiles()[file.index].path === props.selectedFile
+                }
+                onSelect={() =>
+                  props.onSelect?.(filteredFiles()[file.index].path)
+                }
               />
             )}
           </For>
