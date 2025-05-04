@@ -34,12 +34,19 @@ pub fn run() {
 #[serde(rename_all = "camelCase")]
 pub struct AudioFile {
     path: PathBuf,
+    #[serde(skip_serializing_if = "Option::is_none")]
     title: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     artist: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     cover: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     album_title: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     album_artists: Option<Vec<String>>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     year: Option<i32>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     genre: Option<String>,
 }
 

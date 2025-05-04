@@ -20,9 +20,25 @@ export function display(cover: CoverData) {
   return convertFileSrc(cover.path);
 }
 
-export function getData(cover: CoverData){
+export function getData(cover: CoverData) {
   if (cover.type === "audio") {
     return cover.data;
   }
   return cover.path;
+}
+
+// Copied from: https://stackoverflow.com/a/55257089
+export function convertBase64ToBlob(base64Image: string) {
+  // Split into two parts
+  const parts = base64Image.split(";base64,");
+
+  // Hold the content type
+  const imageType = parts[0].split(":")[1];
+
+  // Decode Base64 string
+  const decodedData = window.atob(parts[1]);
+
+  const buffer = Uint8Array.from(decodedData, (c) => c.charCodeAt(0));
+  // Return BLOB image after conversion
+  return new Blob([buffer], { type: imageType });
 }

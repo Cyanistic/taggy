@@ -11,6 +11,7 @@ import {
 import { AudioFile, CoverData } from "@/types";
 import { open } from "@tauri-apps/plugin-dialog";
 import { Channel, invoke } from "@tauri-apps/api/core";
+import { convertBase64ToBlob } from "@/utils";
 
 interface AppContextValue {
   audioFiles: Accessor<Record<string, AudioFile>>;
@@ -44,6 +45,11 @@ export function AppProvider(props: { children: JSX.Element }) {
     onFileProcessed = new Channel<Result<AudioFile>>((result) => {
       if (result.Ok) {
         const audioFile = result.Ok;
+        if (audioFile.cover) {
+          audioFile.cover = URL.createObjectURL(
+            convertBase64ToBlob(audioFile.cover),
+          );
+        }
         setAudioFiles((prev) => ({
           ...prev,
           [audioFile.path]: audioFile,
@@ -61,8 +67,8 @@ export function AppProvider(props: { children: JSX.Element }) {
 
   createEffect(() => {
     const selected = selectedFile();
-    updateSelectedAudioFile(selected ? audioFiles()[selected] : null)
-  })
+    updateSelectedAudioFile(selected ? audioFiles()[selected] : null);
+  });
 
   const setSelectedFile = (file: string | null) => {
     updateSelectedFile(file);

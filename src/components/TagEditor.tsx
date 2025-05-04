@@ -5,7 +5,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Save } from "lucide-solid";
+import { Save, X } from "lucide-solid";
 import { Button } from "./ui/button";
 import { TextField, TextFieldLabel, TextFieldRoot } from "./ui/textfield";
 import { createEffect, createSignal, JSX, Show } from "solid-js";
@@ -22,8 +22,13 @@ export default function TagEditor() {
     setSelectedCover,
   } = useAppContext();
   const [formData, setFormData] = createSignal(selectedAudioFile()!);
-  createEffect(() => {
+
+  const handleReset = () => {
     setFormData(selectedAudioFile()!);
+  };
+
+  createEffect(() => {
+    handleReset();
   });
 
   const handleInputInput: JSX.EventHandler<HTMLInputElement, Event> = (e) => {
@@ -67,6 +72,7 @@ export default function TagEditor() {
                 id="title"
                 name="title"
                 value={formData().title}
+                placeholder={selectedAudioFile()?.title}
                 onInput={handleInputInput}
                 type="text"
               />
@@ -80,6 +86,7 @@ export default function TagEditor() {
                 id="artist"
                 name="artist"
                 value={formData().artist}
+                placeholder={selectedAudioFile()?.artist}
                 onInput={handleInputInput}
                 type="text"
               />
@@ -93,6 +100,7 @@ export default function TagEditor() {
                 id="albumTitle"
                 name="albumTitle"
                 value={formData().albumTitle}
+                placeholder={selectedAudioFile()?.albumTitle}
                 onInput={handleInputInput}
                 type="text"
               />
@@ -106,6 +114,7 @@ export default function TagEditor() {
                 id="albumArtist"
                 name="albumArtist"
                 value={formData().albumArtist}
+                placeholder={selectedAudioFile()?.albumArtist}
                 onInput={handleInputInput}
                 type="text"
               />
@@ -119,6 +128,7 @@ export default function TagEditor() {
                 id="year"
                 name="year"
                 value={formData().year}
+                placeholder={selectedAudioFile()?.year}
                 onInput={handleInputInput}
                 type="number"
               />
@@ -132,6 +142,7 @@ export default function TagEditor() {
                 id="genre"
                 name="genre"
                 value={formData().genre}
+                placeholder={selectedAudioFile()?.genre}
                 onInput={handleInputInput}
                 type="text"
               />
@@ -148,10 +159,16 @@ export default function TagEditor() {
             selectedCover() !== undefined
           }
         >
-          <Button class="w-full" onClick={handleSave}>
-            <Save class="h-4 w-4 mr-2" />
-            Save Changes
-          </Button>
+          <div class="flex w-full space-x-4">
+            <Button class="w-full" onClick={handleSave}>
+              <Save class="h-4 w-4 mr-2" />
+              Save Changes
+            </Button>
+            <Button variant="secondary" class="w-full" onClick={handleReset}>
+              <X class="h-4 w-4 mr-2" />
+              Reset
+            </Button>
+          </div>
         </Show>
       </CardFooter>
     </Card>
