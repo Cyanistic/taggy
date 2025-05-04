@@ -1,0 +1,14 @@
+* Todos
+  - ( ) Saving changes to tags
+  - ( ) Custom sorting modifiers
+  - ( ) Custom search filtering modifiers
+  - ( ) Audio playback
+  -- (x) Proper duration calculation
+  -- (x) Volume controls
+  -- (x) Seeking controls
+  -- ( ) Next/Previous file controls
+  - ( ) Custom thumbnail uploads
+  - ( ) Dark/Light theme selection
+  - ( ) Removing audio directories
+  - ( ) Persistent preferences and audio directories
+  - ( ) Resizeable UI
