@@ -19,7 +19,7 @@ pub fn run() {
         .plugin(tauri_plugin_os::init())
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_opener::init())
-        .invoke_handler(tauri::generate_handler![load_audio_dir])
+        .invoke_handler(tauri::generate_handler![load_audio_dir, get_audio_cover])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }
@@ -68,9 +68,17 @@ fn load_audio_dir(directory: &Path, on_file_processed: Channel<Result<AudioFile>
             path: entry.path().into(),
             title: tags.title().map(|t| t.into()),
             artist: tags.artist().map(|t| t.into()),
-            cover: tags
-                .album_cover()
-                .map(|cover| general_purpose::STANDARD.encode(cover.data)),
+            cover: tags.album_cover().and_then(|cover| {
+                let data = general_purpose::STANDARD.encode(cover.data);
+                if data == "AA==" {
+                    return None;
+                };
+                Some(format!(
+                    "data:{};base64,{}",
+                    Into::<&'static str>::into(cover.mime_type),
+                    data
+                ))
+            }),
             album_title: tags.album_title().map(|t| t.into()),
             album_artists: tags
                 .album_artists()
@@ -80,4 +88,22 @@ fn load_audio_dir(directory: &Path, on_file_processed: Channel<Result<AudioFile>
         }))?;
     }
     Ok(())
+}
+
+#[tauri::command(rename_all = "camelCase", async)]
+fn get_audio_cover(path: &Path) -> Result<Option<String>> {
+    Ok(Tag::new()
+        .read_from_path(path)?
+        .album_cover()
+        .and_then(|cover| {
+            let data = general_purpose::STANDARD.encode(cover.data);
+            if data == "AA==" {
+                return None;
+            };
+            Some(format!(
+                "data:{};base64,{}",
+                Into::<&'static str>::into(cover.mime_type),
+                data
+            ))
+        }))
 }

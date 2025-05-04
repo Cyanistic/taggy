@@ -1,20 +1,26 @@
 import { createEffect, createSignal, JSX, onMount, Show } from "solid-js";
 import { Card, CardContent } from "./ui/card";
 import {
+  Edit,
   Music,
   Pause,
   Play,
   SkipBack,
   SkipForward,
   Volume2,
+  X,
 } from "lucide-solid";
 import { Button } from "./ui/button";
 import { Slider } from "./ui/slider";
 import { useAppContext } from "./AppContext";
 import { fetchResource } from "@/utils";
+import { open } from "@tauri-apps/plugin-dialog";
+import { AudioTypes, ImageTypes } from "@/types";
+import { invoke } from "@tauri-apps/api/core";
 
 export default function AudioPreview() {
-  const { selectedAudioFile } = useAppContext();
+  const { selectedAudioFile, selectedCover, setSelectedCover } =
+    useAppContext();
   const [isPlaying, setIsPlaying] = createSignal(false);
   const [currentTime, setCurrentTime] = createSignal(0);
   const [volume, setVolume] = createSignal(0.1);
@@ -65,6 +71,46 @@ export default function AudioPreview() {
     audioRef.volume = volume();
   });
 
+  const handleImageSelection: JSX.EventHandler<
+    unknown,
+    MouseEvent
+  > = async () => {
+    let newCover = await open({
+      directory: false,
+      multiple: false,
+      filters: [
+        {
+          name: "Images and Audio Covers",
+          extensions: [...ImageTypes, ...AudioTypes],
+        },
+      ],
+    });
+
+    if (!newCover) return;
+    if (AudioTypes.some((ext) => newCover?.toLowerCase().endsWith(`.${ext}`))) {
+      try {
+        newCover = await invoke("get_audio_cover", { path: newCover });
+        if (!newCover) return;
+        setSelectedCover(newCover);
+      } catch (e) {
+        console.error(e);
+      }
+    } else {
+      const coverData = await fetchResource(newCover);
+      setSelectedCover(coverData);
+    }
+  };
+
+  const clearNewCover = (e: MouseEvent) => {
+    e.stopPropagation();
+    setSelectedCover(undefined);
+  };
+
+  const handleRemoveOriginalCover = (e: MouseEvent) => {
+    e.stopPropagation();
+    setSelectedCover(null);
+  };
+
   return (
     <Card class="mb-6">
       <Show when={selectedAudioFile()}>
@@ -72,25 +118,78 @@ export default function AudioPreview() {
           <CardContent class="p-6">
             <div class="flex flex-col items-center">
               {/* Album Art */}
-              <div class="mb-4 w-48 h-48 relative">
-                <Show
-                  when={file().cover}
-                  fallback={
-                    <div class="w-full h-full bg-muted rounded-md flex items-center justify-center">
-                      <Music class="h-16 w-16 text-muted-foreground" />
-                    </div>
-                  }
-                >
-                  <img
-                    src={
-                      file().cover
-                        ? `data:image/jpg;base64,${file().cover}`
-                        : "/placeholder.svg"
+              <div class="mb-4 w-48 h-48 relative group">
+                <div class="relative w-full h-full rounded-md overflow-hidden">
+                  <Show
+                    when={file().cover}
+                    fallback={
+                      <div class="w-full h-full bg-muted rounded-md flex items-center justify-center transition-all duration-300 group-hover:brightness-50">
+                        <Music class="h-16 w-16 text-muted-foreground" />
+                      </div>
                     }
-                    alt={`${file().albumTitle} cover`}
-                    class="w-full h-full object-cover rounded-md"
-                  />
-                </Show>
+                  >
+                    {(cover) => (
+                      <div class="relative w-full h-full">
+                        <img
+                          src={cover()}
+                          alt={`${file().albumTitle} cover`}
+                          class="w-full h-full object-cover rounded-md transition-all duration-300 group-hover:brightness-50"
+                        />
+                        <button
+                          onClick={(e) => handleRemoveOriginalCover(e)}
+                          class="z-2 absolute top-2 right-2 p-1.5 rounded-full bg-destructive hover:bg-destructive/90 transition-all duration-300 opacity-0 group-hover:opacity-100"
+                          aria-label="Remove existing cover"
+                        >
+                          <X class="h-4 w-4 text-destructive-foreground" />
+                        </button>
+                      </div>
+                    )}
+                  </Show>
+
+                  {/* Edit icon overlay */}
+                  <div
+                    class="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300"
+                    onClick={handleImageSelection}
+                  >
+                    <button
+                      class="p-2 rounded-full bg-black/30 hover:bg-black/50 transition-colors duration-300"
+                      aria-label="Edit cover image"
+                    >
+                      <Edit class="h-6 w-6 text-white" />
+                    </button>
+                  </div>
+
+                  {/* New cover preview */}
+                  <Show when={selectedCover() !== undefined}>
+                    <div class="absolute bottom-2 right-2 w-20 h-20">
+                      <div class="relative w-full h-full rounded-md overflow-hidden shadow-lg border-2 border-primary">
+                        <Show
+                          when={selectedCover()}
+                          fallback={
+                            <div class="w-full h-full bg-muted flex items-center justify-center">
+                              <Music class="h-8 w-8 text-muted-foreground" />
+                            </div>
+                          }
+                        >
+                          {(newCover) => (
+                            <img
+                              src={newCover()}
+                              alt="New cover preview"
+                              class="w-full h-full object-cover"
+                            />
+                          )}
+                        </Show>
+                        <button
+                          onClick={clearNewCover}
+                          class="absolute top-1 right-1 p-1 rounded-full bg-destructive hover:bg-destructive/90 transition-colors duration-200"
+                          aria-label="Remove new cover"
+                        >
+                          <X class="h-4 w-4 text-destructive-foreground" />
+                        </button>
+                      </div>
+                    </div>
+                  </Show>
+                </div>
               </div>
 
               {/* Track Info */}

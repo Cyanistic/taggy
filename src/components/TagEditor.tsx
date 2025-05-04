@@ -12,7 +12,7 @@ import { createEffect, createSignal, JSX, Show } from "solid-js";
 import { useAppContext } from "./AppContext";
 
 export default function TagEditor() {
-  const { selectedAudioFile } = useAppContext();
+  const { selectedAudioFile, selectedCover } = useAppContext();
   const [formData, setFormData] = createSignal(selectedAudioFile()!);
   createEffect(() => {
     console.log(selectedAudioFile());
@@ -27,12 +27,6 @@ export default function TagEditor() {
   const handleSave: JSX.EventHandler<HTMLButtonElement, MouseEvent> = (
     _e,
   ) => {};
-
-  const removeCoverArt = () => {
-    setFormData((prev) => ({ ...prev, coverArt: null }));
-  };
-
-  const handleCoverArtUpload = () => {};
 
   return (
     <Card>
@@ -118,52 +112,14 @@ export default function TagEditor() {
               />
             </TextFieldRoot>
           </div>
-
-          <div class="space-y-2">
-            <div class="flex items-center gap-4">
-              <div class="w-24 h-24 relative border rounded-md overflow-hidden">
-                <Show
-                  when={formData().cover}
-                  fallback={
-                    <div class="w-full h-full bg-muted flex items-center justify-center">
-                      <Music class="h-8 w-8 text-muted-foreground" />
-                    </div>
-                  }
-                >
-                  <>
-                    <img
-                      src={
-                        formData().cover
-                          ? `data:image/jpg;base64,${formData().cover}`
-                          : "/placeholder.svg"
-                      }
-                      alt="Album cover"
-                      class="w-full h-full object-cover"
-                    />
-                    <Button
-                      variant="destructive"
-                      size="icon"
-                      class="absolute top-1 right-1 h-6 w-6 rounded-full"
-                      onClick={removeCoverArt}
-                    >
-                      <X class="h-3 w-3" />
-                    </Button>
-                  </>
-                </Show>
-              </div>
-              <Button variant="outline" onClick={handleCoverArtUpload}>
-                <Upload class="h-4 w-4 mr-2" />
-                Upload Cover
-              </Button>
-            </div>
-          </div>
         </div>
       </CardContent>
       <CardFooter>
         <Show
           when={
             // Only show the save changes button if there are changes to be saved
-            JSON.stringify(formData()) !== JSON.stringify(selectedAudioFile())
+            (JSON.stringify(formData()) !==
+            JSON.stringify(selectedAudioFile()) || selectedCover() !== undefined)
           }
         >
           <Button class="w-full" onClick={handleSave}>

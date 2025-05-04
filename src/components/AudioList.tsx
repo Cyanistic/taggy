@@ -102,7 +102,7 @@ export default function AudioList(props: AudioListProps) {
               placeholder="Search"
               value={searchQuery()}
               type="text"
-              onChange={(e) => setSearchQuery(e.target.value)}
+              onInput={(e) => setSearchQuery(e.target.value)}
             />
           </TextFieldRoot>
           <FilterPopover fields={filterFields()} onChange={setFilterFields} />

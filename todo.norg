@@ -7,8 +7,9 @@
   -- (x) Volume controls
   -- (x) Seeking controls
   -- ( ) Next/Previous file controls
-  - ( ) Custom thumbnail uploads
+  - (x) Custom thumbnail uploads
   - ( ) Dark/Light theme selection
   - ( ) Removing audio directories
   - ( ) Persistent preferences and audio directories
   - ( ) Resizeable UI
+  - ( ) Add grouping support

@@ -36,11 +36,7 @@ export default function AudioRow(props: AudioRowProps) {
             >
               {(cover) => (
                 <img
-                  src={
-                    cover()
-                      ? `data:image/jpg;base64,${cover()}`
-                      : "/placeholder.svg"
-                  }
+                  src={cover()}
                   alt={`${props.file.albumTitle} cover`}
                   class="w-12 h-12 object-cover rounded-md"
                 />

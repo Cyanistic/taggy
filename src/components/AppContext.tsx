@@ -5,6 +5,8 @@ import {
   JSX,
   Accessor,
   onMount,
+  createEffect,
+  Setter,
 } from "solid-js";
 import { AudioFile } from "@/types";
 import { open } from "@tauri-apps/plugin-dialog";
@@ -15,6 +17,8 @@ interface AppContextValue {
   selectedFile: Accessor<string | null>;
   selectedAudioFile: Accessor<AudioFile | null>;
   audioDirectories: Accessor<string[]>;
+  selectedCover: Accessor<string | null | undefined>;
+  setSelectedCover: Setter<string | null | undefined>;
   setSelectedFile: (file: string | null) => void;
   addAudioDirectory: () => Promise<void>;
 }
@@ -27,6 +31,10 @@ export function AppProvider(props: { children: JSX.Element }) {
     {},
   );
   const [selectedFile, updateSelectedFile] = createSignal<string | null>(null);
+  // Use undefined to indicate unchanged and null to indicate cover removed
+  const [selectedCover, setSelectedCover] = createSignal<
+    string | null | undefined
+  >(undefined);
   const [selectedAudioFile, updateSelectedAudioFile] =
     createSignal<AudioFile | null>(null);
   const [audioDirectories, setAudioDirectories] = createSignal<string[]>([]);
@@ -43,6 +51,11 @@ export function AppProvider(props: { children: JSX.Element }) {
         console.error(result.Err);
       }
     });
+  });
+
+  createEffect(() => {
+    selectedFile();
+    setSelectedCover(undefined);
   });
 
   const setSelectedFile = (file: string | null) => {
@@ -72,6 +85,8 @@ export function AppProvider(props: { children: JSX.Element }) {
     selectedAudioFile,
     audioDirectories,
     addAudioDirectory,
+    selectedCover,
+    setSelectedCover,
   };
 
   return (

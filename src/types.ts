@@ -8,3 +8,15 @@ export interface AudioFile {
   year?: number;
   genre?: string;
 }
+
+export const ImageTypes = ["png", "jpeg", "jpg", "tiff", "gif"];
+export const AudioTypes = [
+  "mp3",
+  "flac",
+  ".mp4",
+  ".m4a",
+  ".m4p",
+  ".m4b",
+  ".m4r",
+  ".m4v",
+];
