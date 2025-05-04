@@ -1,11 +1,13 @@
 use std::{
+    fs::{self, File},
     io::ErrorKind,
     path::{Path, PathBuf},
 };
 
-use audiotags::{AudioTag, Tag};
+use audiotags::{AudioTag, MimeType, Picture, Tag};
 use base64::{Engine, engine::general_purpose};
-use serde::Serialize;
+use error::AppError;
+use serde::{Deserialize, Serialize};
 use tauri::ipc::Channel;
 use walkdir::WalkDir;
 
@@ -19,12 +21,16 @@ pub fn run() {
         .plugin(tauri_plugin_os::init())
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_opener::init())
-        .invoke_handler(tauri::generate_handler![load_audio_dir, get_audio_cover])
+        .invoke_handler(tauri::generate_handler![
+            load_audio_dir,
+            get_audio_cover,
+            save_audio_tags
+        ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }
 
-#[derive(Serialize)]
+#[derive(Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct AudioFile {
     path: PathBuf,
@@ -106,4 +112,73 @@ fn get_audio_cover(path: &Path) -> Result<Option<String>> {
                 data
             ))
         }))
+}
+
+#[tauri::command(rename_all = "camelCase", async)]
+fn save_audio_tags(tags: AudioFile, remove_cover: bool) -> Result<()> {
+    let mut new_tags = Tag::new().read_from_path(&tags.path)?;
+    match tags.album_artists {
+        Some(artists) => new_tags.set_album_artist(&artists.join(new_tags.config().sep_artist)),
+        None => new_tags.remove_album_artist(),
+    }
+    match tags.album_title {
+        Some(title) => new_tags.set_album_title(&title),
+        None => new_tags.remove_album_title(),
+    }
+    match tags.artist {
+        Some(artist) => new_tags.set_artist(&artist),
+        None => new_tags.remove_artist(),
+    }
+    match tags.genre {
+        Some(genre) => new_tags.set_genre(&genre),
+        None => new_tags.remove_genre(),
+    }
+    match tags.title {
+        Some(genre) => new_tags.set_title(&genre),
+        None => new_tags.remove_title(),
+    }
+    match tags.year {
+        Some(year) => new_tags.set_year(year),
+        None => new_tags.remove_year(),
+    }
+    if remove_cover {
+        new_tags.remove_album_cover();
+    } else if let Some(cover) = tags.cover {
+        if let Some(cover) = cover.strip_prefix("data:") {
+            let mime_end = cover
+                .find(';')
+                .ok_or(AppError::UserError("Invalid base64 image type!".into()))?;
+            let mime = match &cover[..mime_end] {
+                "image/jpeg" => MimeType::Jpeg,
+                "image/png" => MimeType::Png,
+                "image/tiff" => MimeType::Tiff,
+                "image/bmp" => MimeType::Bmp,
+                "image/gif" => MimeType::Gif,
+                _ => return Err(AppError::UserError("Invalid base64 image type!".into())),
+            };
+            let image_data = general_purpose::STANDARD.decode(
+                &cover[cover
+                    .find(',')
+                    .ok_or(AppError::UserError("Invalid base64 image type!".into()))?
+                    + 1..],
+            )?;
+            new_tags.set_album_cover(Picture::new(&image_data, mime));
+        } else {
+            let mime = match &cover[cover
+                .rfind('.')
+                .ok_or(AppError::UserError("Invalid image type!".into()))?
+                + 1..]
+            {
+                "png" => MimeType::Png,
+                "jpeg" | "jpg" => MimeType::Jpeg,
+                "tiff" => MimeType::Tiff,
+                "gif" => MimeType::Gif,
+                "bmp" => MimeType::Bmp,
+                _ => return Err(AppError::UserError("Invalid image type!".into())),
+            };
+            new_tags.set_album_cover(Picture::new(&fs::read(cover)?, mime));
+        }
+    }
+    new_tags.write_to(&mut File::create(&tags.path)?)?;
+    Ok(())
 }

@@ -4,10 +4,14 @@ export interface AudioFile {
   artist?: string;
   cover?: string;
   albumTitle?: string;
-  albumArtist?: string;
+  albumArtist?: string[];
   year?: number;
   genre?: string;
 }
+
+export type CoverData =
+  | { type: "image"; path: string }
+  | { type: "audio"; data: string };
 
 export const ImageTypes = ["png", "jpeg", "jpg", "tiff", "gif"];
 export const AudioTypes = [

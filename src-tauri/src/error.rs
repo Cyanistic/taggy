@@ -11,6 +11,7 @@ pub enum AppError {
     AudioError(#[from] audiotags::Error),
     WalkDirError(#[from] walkdir::Error),
     TauriError(#[from] tauri::Error),
+    DecodeError(#[from] base64::DecodeError),
     UserError(String),
 }
 
@@ -31,6 +32,7 @@ impl Display for AppError {
             AppError::AudioError(err) => write!(f, "Audio error: {}", err),
             AppError::TauriError(err) => write!(f, "Tauri error: {}", err),
             AppError::WalkDirError(err) => write!(f, "WalkDir error: {}", err),
+            AppError::DecodeError(err) => write!(f, "Decode error: {}", err),
             AppError::UserError(err) => write!(f, "{}", err),
         }
     }

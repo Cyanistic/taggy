@@ -13,7 +13,7 @@ import {
 import { Button } from "./ui/button";
 import { Slider } from "./ui/slider";
 import { useAppContext } from "./AppContext";
-import { fetchResource } from "@/utils";
+import { display, fetchResource } from "@/utils";
 import { open } from "@tauri-apps/plugin-dialog";
 import { AudioTypes, ImageTypes } from "@/types";
 import { invoke } from "@tauri-apps/api/core";
@@ -91,13 +91,12 @@ export default function AudioPreview() {
       try {
         newCover = await invoke("get_audio_cover", { path: newCover });
         if (!newCover) return;
-        setSelectedCover(newCover);
+        setSelectedCover({ type: "audio", data: newCover });
       } catch (e) {
         console.error(e);
       }
     } else {
-      const coverData = await fetchResource(newCover);
-      setSelectedCover(coverData);
+      setSelectedCover({ type: "image", path: newCover });
     }
   };
 
@@ -151,12 +150,13 @@ export default function AudioPreview() {
                     class="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300"
                     onClick={handleImageSelection}
                   >
-                    <button
-                      class="p-2 rounded-full bg-black/30 hover:bg-black/50 transition-colors duration-300"
+                    <Button
+                      variant="ghost"
+                      class="p-2 rounded-full transition-colors duration-300"
                       aria-label="Edit cover image"
                     >
                       <Edit class="h-6 w-6 text-white" />
-                    </button>
+                    </Button>
                   </div>
 
                   {/* New cover preview */}
@@ -173,7 +173,7 @@ export default function AudioPreview() {
                         >
                           {(newCover) => (
                             <img
-                              src={newCover()}
+                              src={display(newCover())}
                               alt="New cover preview"
                               class="w-full h-full object-cover"
                             />

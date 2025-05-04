@@ -5,17 +5,24 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Music, Save, Upload, X } from "lucide-solid";
+import { Save } from "lucide-solid";
 import { Button } from "./ui/button";
 import { TextField, TextFieldLabel, TextFieldRoot } from "./ui/textfield";
 import { createEffect, createSignal, JSX, Show } from "solid-js";
 import { useAppContext } from "./AppContext";
+import { invoke } from "@tauri-apps/api/core";
+import { display, getData } from "@/utils";
 
 export default function TagEditor() {
-  const { selectedAudioFile, selectedCover } = useAppContext();
+  const {
+    selectedAudioFile,
+    selectedFile,
+    selectedCover,
+    setAudioFile,
+    setSelectedCover,
+  } = useAppContext();
   const [formData, setFormData] = createSignal(selectedAudioFile()!);
   createEffect(() => {
-    console.log(selectedAudioFile());
     setFormData(selectedAudioFile()!);
   });
 
@@ -24,9 +31,27 @@ export default function TagEditor() {
     setFormData((prev) => ({ ...prev, [name]: value || undefined }));
   };
 
-  const handleSave: JSX.EventHandler<HTMLButtonElement, MouseEvent> = (
-    _e,
-  ) => {};
+  const handleSave: JSX.EventHandler<
+    HTMLButtonElement,
+    MouseEvent
+  > = async () => {
+    try {
+      const cover = selectedCover();
+      const tags = {
+        ...formData(),
+        cover: cover ? getData(cover) : undefined,
+      };
+      await invoke("save_audio_tags", {
+        tags,
+        removeCover: selectedCover() === null,
+      });
+      tags.cover = cover ? display(cover) : undefined;
+      setAudioFile(selectedFile()!, tags);
+      setSelectedCover(undefined);
+    } catch (e) {
+      console.error(e);
+    }
+  };
 
   return (
     <Card>
@@ -118,8 +143,9 @@ export default function TagEditor() {
         <Show
           when={
             // Only show the save changes button if there are changes to be saved
-            (JSON.stringify(formData()) !==
-            JSON.stringify(selectedAudioFile()) || selectedCover() !== undefined)
+            JSON.stringify(formData()) !==
+              JSON.stringify(selectedAudioFile()) ||
+            selectedCover() !== undefined
           }
         >
           <Button class="w-full" onClick={handleSave}>

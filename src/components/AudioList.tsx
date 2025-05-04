@@ -1,5 +1,5 @@
 import { AudioFile } from "@/types";
-import { createEffect, For, Show } from "solid-js";
+import { createEffect, For } from "solid-js";
 import AudioRow from "./AudioRow";
 import { FolderPlus, Search } from "lucide-solid";
 import { TextField, TextFieldRoot } from "./ui/textfield";
@@ -53,6 +53,7 @@ export default function AudioList(props: AudioListProps) {
     fuse = new Fuse(Object.values(audioFiles()), {
       keys: ["title", "artist", "albumTitle", "albumArtist", "genre", "year"],
       minMatchCharLength: 1,
+      ignoreLocation: true,
       // Add smart case functionality
       isCaseSensitive: searchQuery().toLocaleLowerCase() !== searchQuery(),
     });

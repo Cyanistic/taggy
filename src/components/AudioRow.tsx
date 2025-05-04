@@ -43,7 +43,9 @@ export default function AudioRow(props: AudioRowProps) {
               )}
             </Show>
             <div class="overflow-hidden flex-1 min-w-0">
-              <p class="font-medium truncate">{props.file.title}</p>
+              <p class="font-medium truncate" title={props.file.title}>
+                {props.file.title}
+              </p>
               <Show when={props.file.artist || props.file.albumTitle}>
                 <p class="text-sm text-muted-foreground truncate">
                   {props.file.artist} • {props.file.albumTitle}

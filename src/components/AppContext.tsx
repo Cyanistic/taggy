@@ -8,7 +8,7 @@ import {
   createEffect,
   Setter,
 } from "solid-js";
-import { AudioFile } from "@/types";
+import { AudioFile, CoverData } from "@/types";
 import { open } from "@tauri-apps/plugin-dialog";
 import { Channel, invoke } from "@tauri-apps/api/core";
 
@@ -17,8 +17,9 @@ interface AppContextValue {
   selectedFile: Accessor<string | null>;
   selectedAudioFile: Accessor<AudioFile | null>;
   audioDirectories: Accessor<string[]>;
-  selectedCover: Accessor<string | null | undefined>;
-  setSelectedCover: Setter<string | null | undefined>;
+  selectedCover: Accessor<CoverData | null | undefined>;
+  setSelectedCover: Setter<CoverData | null | undefined>;
+  setAudioFile: (key: string, value: AudioFile | undefined) => void;
   setSelectedFile: (file: string | null) => void;
   addAudioDirectory: () => Promise<void>;
 }
@@ -33,7 +34,7 @@ export function AppProvider(props: { children: JSX.Element }) {
   const [selectedFile, updateSelectedFile] = createSignal<string | null>(null);
   // Use undefined to indicate unchanged and null to indicate cover removed
   const [selectedCover, setSelectedCover] = createSignal<
-    string | null | undefined
+    CoverData | null | undefined
   >(undefined);
   const [selectedAudioFile, updateSelectedAudioFile] =
     createSignal<AudioFile | null>(null);
@@ -58,9 +59,26 @@ export function AppProvider(props: { children: JSX.Element }) {
     setSelectedCover(undefined);
   });
 
+  createEffect(() => {
+    const selected = selectedFile();
+    updateSelectedAudioFile(selected ? audioFiles()[selected] : null)
+  })
+
   const setSelectedFile = (file: string | null) => {
     updateSelectedFile(file);
     updateSelectedAudioFile(file ? audioFiles()[file] : null);
+  };
+
+  const setAudioFile = (key: string, value: AudioFile | undefined) => {
+    setAudioFiles((prev) => {
+      if (!value) {
+        const temp = { ...prev };
+        delete temp[key];
+        return temp;
+      } else {
+        return { ...prev, [key]: value };
+      }
+    });
   };
 
   const addAudioDirectory = async () => {
@@ -87,6 +105,7 @@ export function AppProvider(props: { children: JSX.Element }) {
     addAudioDirectory,
     selectedCover,
     setSelectedCover,
+    setAudioFile,
   };
 
   return (
