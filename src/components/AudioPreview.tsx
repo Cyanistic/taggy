@@ -155,13 +155,16 @@ export default function AudioPreview() {
                     minValue={0}
                     maxValue={1}
                     step={0.01}
-                    onChange={(value) => {
-                      const val = value[0];
+                    onChange={(value: number[]) => {
+                      const val: number = value[0];
                       audioRef.volume = val;
                       setVolume(val);
                     }}
-                    class="w-24"
+                    class="w-24 mr-1"
                   />
+                  <span class="text-xs text-muted-foreground w-8">
+                    {Math.round(volume() * 100)}%
+                  </span>
                 </div>
               </div>
             </div>

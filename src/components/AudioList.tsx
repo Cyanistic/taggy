@@ -71,7 +71,7 @@ export default function AudioList(props: AudioListProps) {
   let listRef!: HTMLDivElement;
   const staticOptions = {
     getScrollElement: () => listRef,
-    estimateSize: () => 72,
+    estimateSize: () => 108,
     gap: 8,
     overscan: 5, // Slightly increased for smoother scrolling
   };
@@ -130,6 +130,12 @@ export default function AudioList(props: AudioListProps) {
                     transform: `translateY(${virtualRow.start}px)`,
                   }}
                   file={file}
+                  data-index={virtualRow.index}
+                  ref={(el) => {
+                    // Fix thanks to this guy: https://github.com/TanStack/virtual/issues/930#issue-2861887686
+                    el.dataset.index = virtualRow.index.toString();
+                    listVirtualizer().measureElement(el);
+                  }}
                   selected={file.path === props.selectedFile}
                   onSelect={() => props.onSelect?.(file.path)}
                 />
