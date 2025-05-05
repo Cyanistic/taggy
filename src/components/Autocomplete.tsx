@@ -150,7 +150,7 @@ export default function Autocomplete(props: CommandInputProps) {
               // Keep the dropdown open a bit longer to allow clicking on suggestions
               setTimeout(() => setIsOpen(false), 150);
             }}
-            class={props.initialValue || props.placeholder ? undefined : "pl-10"}
+            class={props.initialValue || props.placeholder !== undefined ? undefined : "pl-10"}
             aria-autocomplete="list"
             aria-controls="suggestions-list"
             aria-expanded={isOpen()}
@@ -158,7 +158,7 @@ export default function Autocomplete(props: CommandInputProps) {
               selectedIndex() >= 0 ? `suggestion-${selectedIndex()}` : undefined
             }
           />
-          <Show when={!props.initialValue && !props.placeholder}>
+          <Show when={!props.initialValue && props.placeholder === undefined}>
             <Search class="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           </Show>
         </TextFieldRoot>

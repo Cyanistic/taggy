@@ -8,13 +8,10 @@ import { useAppContext } from "./AppContext";
 import { createVirtualizer } from "@tanstack/solid-virtual";
 import { createMemo, createSignal } from "solid-js";
 import Fuse from "fuse.js";
-import {
-  createDebouncedSignal,
-  createThrottledSignal,
-} from "@tanstack/solid-pacer";
-import { FilterField } from "./FilterPopover";
-import FilterButton from "./FilterButton";
+import { createDebouncedSignal } from "@tanstack/solid-pacer";
+import FilterButton, { FilterField } from "./FilterButton";
 import { SortDropdown as SortDropdown, SortCriterion } from "./SortButton";
+import { Badge } from "./ui/badge";
 
 interface AudioListProps {
   selectedFile?: string;
@@ -66,56 +63,18 @@ export default function AudioList(props: AudioListProps) {
 
   // Define filter fields based on AudioFile properties
   const [filterFields, setFilterFields] = createSignal<FilterField[]>([
-    { key: "title", label: "Title", enabled: true },
-    { key: "artist", label: "Artist", enabled: true },
-    { key: "albumTitle", label: "Album", enabled: true },
-    { key: "albumArtists", label: "Album Artist", enabled: true },
-    { key: "genre", label: "Genre", enabled: true },
-    { key: "year", label: "Year", enabled: true },
+    { field: "title", label: "Title", enabled: true },
+    { field: "artist", label: "Artist", enabled: false },
+    { field: "albumTitle", label: "Album", enabled: false },
+    { field: "albumArtists", label: "Album Artist", enabled: false },
+    { field: "genre", label: "Genre", enabled: false },
+    { field: "year", label: "Year", enabled: false },
   ]);
-
-  const [filteredFiles, setFilteredFiles] = createThrottledSignal<AudioFile[]>(
-    Object.values(audioFiles()),
-    {
-      wait: 300,
-    },
-  );
 
   // Sort criteria state
   const [sortCriteria, setSortCriteria] = createSignal<SortCriterion[]>([
     { label: "Title", field: "title", direction: "asc" },
   ]);
-
-  const sortFiles = (files: AudioFile[]): AudioFile[] =>
-    files
-      .filter((file) => {
-        if (!searchQuery()) return true;
-
-        return Object.entries(filterFields()).some(([field, enabled]) => {
-          if (!enabled) return false;
-          //@ts-expect-error we already check this
-          return file[field]?.toLowerCase().includes(searchQuery.toLowerCase());
-        });
-      })
-      .sort((a, b) => {
-        // Handle multi-criteria sorting
-        for (const criterion of sortCriteria()) {
-          //@ts-expect-error we already check this
-          const fieldA = a[criterion.field] || "";
-          //@ts-expect-error we already check this
-          const fieldB = b[criterion.field] || "";
-
-          const comparison = compareValues(fieldA, fieldB, criterion.direction);
-
-          // If items are equal on this criterion, continue to the next criterion
-          if (comparison !== 0) {
-            return comparison;
-          }
-        }
-
-        // If all criteria are equal, maintain original order
-        return 0;
-      });
 
   // Sort options that can be added to criteria
   const sortOptions = [
@@ -126,45 +85,71 @@ export default function AudioList(props: AudioListProps) {
     { label: "Genre", value: "genre" },
   ];
 
-  let fuse: Fuse<AudioFile>;
-  createEffect(() => {
-    setFilteredFiles(Object.values(audioFiles()));
-  });
-
-  // If the list of audio files changes, then reinitialize fuse
-  createEffect(() => {
-    fuse = new Fuse(Object.values(audioFiles()), {
-      keys: ["title", "artist", "albumTitle", "albumArtists", "genre", "year"],
+  const fuse = createMemo<Fuse<AudioFile>>(() => {
+    return new Fuse(Object.values(audioFiles()), {
+      keys: filterFields()
+        .filter((f) => f.enabled)
+        .map((f) => f.field),
       minMatchCharLength: 1,
-      ignoreLocation: true,
+      ignoreLocation: false,
       // Add smart case functionality
       isCaseSensitive: searchQuery().toLocaleLowerCase() !== searchQuery(),
     });
   });
 
-  // If the search query changes, then update the filtered files using fuse
-  createEffect(() => {
-    if (!searchQuery()) {
-      setFilteredFiles(Object.values(audioFiles()));
-    } else {
-      const items = fuse.search(searchQuery());
-      setFilteredFiles(sortFiles(items.map(({ item }) => item)));
-    }
+  // 2) Reactive filtered + sorted files
+  const filteredFiles = createMemo(() => {
+    const q = searchQuery();
+    const list = q
+      ? fuse()
+          .search(q)
+          .map((r) => r.item)
+      : Object.values(audioFiles());
+    return list.sort((a, b) => {
+      // Handle multi-criteria sorting
+      for (const criterion of sortCriteria()) {
+        //@ts-expect-error we already check this
+        const fieldA = a[criterion.field] || "";
+        //@ts-expect-error we already check this
+        const fieldB = b[criterion.field] || "";
+
+        const comparison = compareValues(fieldA, fieldB, criterion.direction);
+
+        // If items are equal on this criterion, continue to the next criterion
+        if (comparison !== 0) {
+          return comparison;
+        }
+      }
+
+      // If all criteria are equal, maintain original order
+      return 0;
+    });
   });
 
   let listRef!: HTMLDivElement;
-  const staticOptions = {
+  const listVirtualizer = createVirtualizer({
+    get count() {
+      return filteredFiles().length;
+    },
     getScrollElement: () => listRef,
     estimateSize: () => 108,
     gap: 8,
-    overscan: 5, // Slightly increased for smoother scrolling
-  };
+    overscan: 5,
+  });
 
-  const listVirtualizer = createMemo(() => {
-    return createVirtualizer({
-      ...staticOptions,
-      count: filteredFiles().length,
+  createEffect(() => {
+    searchQuery();
+    filterFields();
+    listVirtualizer.setOptions({ ...listVirtualizer.options, enabled: false });
+    listVirtualizer._willUpdate();
+    listVirtualizer.setOptions({
+      ...listVirtualizer.options,
+      get count() {
+        return filteredFiles().length;
+      },
+      enabled: true,
     });
+    listVirtualizer._willUpdate();
   });
 
   return (
@@ -202,21 +187,55 @@ export default function AudioList(props: AudioListProps) {
               </Button>
             </Show>
           </div>
-          {/* <FilterPopover fields={filterFields()} onChange={setFilterFields} /> */}
-          <FilterButton />
+          <FilterButton
+            fields={filterFields()}
+            onChange={(checked, index) =>
+              setFilterFields((prev) =>
+                prev.map((f, i) =>
+                  i === index ? { ...f, enabled: checked } : f,
+                ),
+              )
+            }
+          />
           <SortDropdown
             sortOptions={sortOptions}
             onChange={(newCriteria) => setSortCriteria(newCriteria)}
           />
         </div>
+        <div class="flex flex-wrap items-center text-sm text-muted-foreground gap-1 mt-2">
+          <span class="mr-1">Sorting by:</span>
+          <For each={sortCriteria()}>
+            {(criterion, index) => (
+              <Badge variant="outline" class="bg-primary/5 border-primary/20">
+                {criterion.label}
+                {criterion.direction === "asc" ? "↑" : "↓"}
+                {index() < sortCriteria().length - 1 ? ", " : ""}
+              </Badge>
+            )}
+          </For>
+          <Badge variant="outline" class="ml-auto">
+            {filteredFiles().length} results
+          </Badge>
+        </div>
+        <Show when={searchQuery()}>
+          <div class="flex items-center text-sm text-muted-foreground">
+            <span>
+              Searching in:{" "}
+              {Object.entries(filterFields())
+                .filter(([_, enabled]) => enabled.enabled)
+                .map(([_, f]) => f.field)
+                .join(", ")}
+            </span>
+          </div>
+        </Show>
       </div>
       <div class="flex-1 overflow-y-auto rounded-2xl mt-4" ref={listRef}>
         <div
           class="relative w-full"
-          style={{ height: `${listVirtualizer().getTotalSize()}px` }}
+          style={{ height: `${listVirtualizer.getTotalSize()}px` }}
         >
           <For
-            each={listVirtualizer().getVirtualItems()}
+            each={listVirtualizer.getVirtualItems()}
             fallback={
               <p class="text-center py-8 text-muted-foreground">
                 No audio files found
@@ -236,7 +255,7 @@ export default function AudioList(props: AudioListProps) {
                   ref={(el) => {
                     // Fix thanks to this guy: https://github.com/TanStack/virtual/issues/930#issue-2861887686
                     el.dataset.index = virtualRow.index.toString();
-                    listVirtualizer().measureElement(el);
+                    listVirtualizer.measureElement(el);
                   }}
                   selected={file.path === props.selectedFile}
                   onSelect={() => props.onSelect?.(file.path)}

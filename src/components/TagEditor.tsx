@@ -106,8 +106,8 @@ export default function TagEditor() {
             <TextFieldRoot>
               <TextFieldLabel>Artist</TextFieldLabel>
               <TagInput
-                input={formData().artist || ""}
-                placeholder={selectedAudioFile()?.artist}
+                input={formData().artist ?? ""}
+                placeholder={selectedAudioFile()?.artist ?? ""}
                 onChange={(value) => {
                   setFormData((prev) => ({
                     ...prev,
@@ -123,8 +123,8 @@ export default function TagEditor() {
             <TextFieldRoot>
               <TextFieldLabel>Album</TextFieldLabel>
               <TagInput
-                input={formData().albumTitle || ""}
-                placeholder={selectedAudioFile()?.albumTitle}
+                input={formData().albumTitle ?? ""}
+                placeholder={selectedAudioFile()?.albumTitle ?? ""}
                 onChange={(value) => {
                   setFormData((prev) => ({
                     ...prev,
@@ -171,8 +171,8 @@ export default function TagEditor() {
             <TextFieldRoot>
               <TextFieldLabel>Genre</TextFieldLabel>
               <TagInput
-                input={formData().genre || ""}
-                placeholder={selectedAudioFile()?.genre}
+                input={formData().genre ?? ""}
+                placeholder={selectedAudioFile()?.genre ?? ""}
                 onChange={(value) => {
                   setFormData((prev) => ({
                     ...prev,

@@ -4,6 +4,7 @@ import {
   ArrowUp,
   Plus,
   ArrowUpDown,
+  X,
 } from "lucide-solid";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/libs/cn";
@@ -44,6 +45,7 @@ export interface SortCriterion {
 interface SortableCriteriaListProps {
   criteria: SortCriterion[];
   onChange: (newCriteria: SortCriterion[]) => void;
+  onRemove?: (field: string) => void;
 }
 
 interface SortOption {
@@ -155,14 +157,14 @@ export function SortDropdown(props: EnhancedSortDropdownProps) {
         >
           <ArrowUpDown class="h-4 w-4" />
           <span class="hidden sm:inline">Sort</span>
-          {sortCriteria.length > 1 && (
+          <Show when={sortCriteria().length > 1}>
             <Badge
               variant="secondary"
               class="h-5 ml-1 group-hover:bg-primary/10 bg-accent text-accent-foreground"
             >
-              {sortCriteria.length}
+              {sortCriteria().length}
             </Badge>
-          )}
+          </Show>
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent class="w-64 justify-end">
@@ -175,6 +177,7 @@ export function SortDropdown(props: EnhancedSortDropdownProps) {
             <SortableCriteriaList
               criteria={sortCriteria()}
               onChange={handleCriteriaChange}
+              onRemove={handleRemoveCriterion}
             />
           </div>
 
@@ -223,7 +226,7 @@ export function SortDropdown(props: EnhancedSortDropdownProps) {
 }
 
 export function SortableCriteriaList(props: SortableCriteriaListProps) {
-  const [activeItem, setActiveItem] = createSignal<string | null>(null);
+  const [activeItem, setActiveItem] = createSignal<SortCriterion | null>(null);
   const handleDirectionToggle = (index: number) => {
     const newCriteria = [...props.criteria];
     newCriteria[index] = {
@@ -234,7 +237,7 @@ export function SortableCriteriaList(props: SortableCriteriaListProps) {
   };
 
   const onDragStart = ({ draggable }: { draggable: { id: string } }) => {
-    setActiveItem(draggable.id);
+    setActiveItem(props.criteria.find((c) => c.field === draggable.id) ?? null);
   };
 
   const onDragEnd = ({
@@ -254,7 +257,7 @@ export function SortableCriteriaList(props: SortableCriteriaListProps) {
         updatedItems.splice(toIndex, 0, ...updatedItems.splice(fromIndex, 1));
         props.onChange(updatedItems);
       }
-      console.log(props.criteria);
+      setActiveItem(null);
     }
   };
 
@@ -281,46 +284,78 @@ export function SortableCriteriaList(props: SortableCriteriaListProps) {
               <For each={props.criteria}>
                 {(criterion, index) => (
                   <Sortable item={criterion.field}>
-                    <div class="group border border-input rounded-md bg-background flex items-center px-2 py-1.5 cursor-grab active:cursor-grabbing">
-                      <div class="mr-2 touch-none text-muted-foreground flex-shrink-0">
-                        <GripVertical class="h-4 w-4" />
-                      </div>
-                      <span class="text-sm flex-1 truncate">
-                        {criterion.label}
-                      </span>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        class={cn(
-                          "h-6 w-6 ml-2",
-                          criterion.direction === "asc"
-                            ? "text-primary"
-                            : "text-primary/80",
-                        )}
-                        onClick={() => handleDirectionToggle(index())}
-                        title={
-                          criterion.direction === "asc"
-                            ? "Ascending"
-                            : "Descending"
-                        }
-                      >
-                        {criterion.direction === "asc" ? (
-                          <ArrowUp class="h-3.5 w-3.5" />
-                        ) : (
-                          <ArrowDown class="h-3.5 w-3.5" />
-                        )}
-                      </Button>
-                    </div>
+                    <CriterionRow
+                      field={criterion.field}
+                      label={criterion.label}
+                      direction={criterion.direction}
+                      showRemove={props.criteria.length > 1 && !activeItem()}
+                      onRemove={props.onRemove}
+                      onClick={() => handleDirectionToggle(index())}
+                    />
                   </Sortable>
                 )}
               </For>
             </SortableProvider>
           </div>
-          <DragOverlay>
-            <div class="sortable">{activeItem()}</div>
+          <DragOverlay class="z-50">
+            <Show when={activeItem()}>
+              {(criterion) => (
+                <CriterionRow
+                  field={criterion().field}
+                  label={criterion().label}
+                  direction={criterion().direction}
+                  onRemove={props.onRemove}
+                />
+              )}
+            </Show>
           </DragOverlay>
         </DragDropProvider>
       </Show>
+    </div>
+  );
+}
+
+function CriterionRow(
+  props: SortCriterion & {
+    onClick?: () => void;
+    showRemove?: boolean;
+    onRemove?: (field: string) => void;
+  },
+) {
+  return (
+    <div class="group border border-input rounded-md bg-background flex items-center px-2 py-1.5 cursor-grab active:cursor-grabbing">
+      <div class="mr-2 touch-none text-muted-foreground flex-shrink-0">
+        <GripVertical class="h-4 w-4" />
+      </div>
+      <span class="text-sm flex-1 truncate">{props.label}</span>
+      <Show when={props.showRemove}>
+        <Button
+          variant="ghost"
+          size="icon"
+          class="h-6 w-6 ml-1 opacity-0 group-hover:opacity-100 transition-opacity text-destructive hover:text-destructive/90 hover:bg-destructive/10"
+          onClick={() => props.onRemove?.(props.field)}
+          title="Remove props"
+        >
+          <X class="h-3.5 w-3.5" />
+        </Button>
+      </Show>
+      <Button
+        variant="ghost"
+        size="icon"
+        class={cn(
+          "h-6 w-6 ml-2",
+          props.direction === "asc" ? "text-primary" : "text-primary/80",
+        )}
+        onClick={props.onClick}
+        title={props.direction === "asc" ? "Ascending" : "Descending"}
+      >
+        <Show
+          when={props.direction === "asc"}
+          fallback={<ArrowDown class="h-3.5 w-3.5" />}
+        >
+          <ArrowUp class="h-3.5 w-3.5" />
+        </Show>
+      </Button>
     </div>
   );
 }

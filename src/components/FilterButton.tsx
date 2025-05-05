@@ -9,15 +9,20 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "./ui/dropdown-menu";
-import { createSignal } from "solid-js";
+import { For } from "solid-js";
 
-export default function FilterButton() {
-  const [searchFields, setSearchFields] = createSignal({
-    title: true,
-    artist: true,
-    album: true,
-    genre: false,
-  });
+export interface FilterField {
+  field: string;
+  label: string;
+  enabled: boolean;
+}
+
+export interface FilterProps {
+  fields: FilterField[];
+  onChange?: (checked: boolean, index: number) => void;
+}
+
+export default function FilterButton(props: FilterProps) {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger>
@@ -34,42 +39,17 @@ export default function FilterButton() {
         <DropdownMenuGroup>
           <DropdownMenuGroupLabel>Search in</DropdownMenuGroupLabel>
           <DropdownMenuSeparator />
-          <DropdownMenuCheckboxItem
-            checked={searchFields().title}
-            onChange={(checked) =>
-              setSearchFields((prev) => ({ ...prev, title: checked }))
-            }
-            class="focus:bg-primary/10"
-          >
-            Title
-          </DropdownMenuCheckboxItem>
-          <DropdownMenuCheckboxItem
-            checked={searchFields().artist}
-            onChange={(checked) =>
-              setSearchFields((prev) => ({ ...prev, artist: checked }))
-            }
-            class="focus:bg-primary/10"
-          >
-            Artist
-          </DropdownMenuCheckboxItem>
-          <DropdownMenuCheckboxItem
-            checked={searchFields().album}
-            onChange={(checked) =>
-              setSearchFields((prev) => ({ ...prev, album: checked }))
-            }
-            class="focus:bg-primary/10"
-          >
-            Album
-          </DropdownMenuCheckboxItem>
-          <DropdownMenuCheckboxItem
-            checked={searchFields().genre}
-            onChange={(checked) =>
-              setSearchFields((prev) => ({ ...prev, genre: checked }))
-            }
-            class="focus:bg-primary/10"
-          >
-            Genre
-          </DropdownMenuCheckboxItem>
+          <For each={props.fields}>
+            {(field, index) => (
+              <DropdownMenuCheckboxItem
+                checked={field.enabled}
+                onChange={(checked) => props.onChange?.(checked, index())}
+                class="focus:bg-primary/10"
+              >
+                {field.label}
+              </DropdownMenuCheckboxItem>
+            )}
+          </For>
         </DropdownMenuGroup>
       </DropdownMenuContent>
     </DropdownMenu>
