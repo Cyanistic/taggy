@@ -1,7 +1,7 @@
 * Todos
   - (x) Saving changes to tags
-  - ( ) Custom sorting modifiers
-  - ( ) Custom search filtering modifiers
+  - (x) Custom sorting modifiers
+  - (x) Custom search filtering modifiers
   - ( ) Audio playback
   -- (x) Proper duration calculation
   -- (x) Volume controls
