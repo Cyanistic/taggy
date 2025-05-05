@@ -31,7 +31,7 @@ export default function AudioList(props: AudioListProps) {
     { key: "title", label: "Title", enabled: true },
     { key: "artist", label: "Artist", enabled: true },
     { key: "albumTitle", label: "Album", enabled: true },
-    { key: "albumArtist", label: "Album Artist", enabled: true },
+    { key: "albumArtists", label: "Album Artist", enabled: true },
     { key: "genre", label: "Genre", enabled: true },
     { key: "year", label: "Year", enabled: true },
   ]);
@@ -51,7 +51,7 @@ export default function AudioList(props: AudioListProps) {
   // If the list of audio files changes, then reinitialize fuse
   createEffect(() => {
     fuse = new Fuse(Object.values(audioFiles()), {
-      keys: ["title", "artist", "albumTitle", "albumArtist", "genre", "year"],
+      keys: ["title", "artist", "albumTitle", "albumArtists", "genre", "year"],
       minMatchCharLength: 1,
       ignoreLocation: true,
       // Add smart case functionality

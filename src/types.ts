@@ -4,7 +4,7 @@ export interface AudioFile {
   artist?: string;
   cover?: string;
   albumTitle?: string;
-  albumArtist?: string[];
+  albumArtists?: string[];
   year?: number;
   genre?: string;
 }

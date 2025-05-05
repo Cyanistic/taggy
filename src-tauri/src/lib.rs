@@ -30,7 +30,7 @@ pub fn run() {
         .expect("error while running tauri application");
 }
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Debug)]
 #[serde(rename_all = "camelCase")]
 pub struct AudioFile {
     path: PathBuf,
@@ -123,6 +123,7 @@ fn get_audio_cover(path: &Path) -> Result<Option<String>> {
 
 #[tauri::command(rename_all = "camelCase", async)]
 fn save_audio_tags(tags: AudioFile, remove_cover: bool) -> Result<()> {
+    dbg!(&tags);
     let mut new_tags = Tag::new().read_from_path(&tags.path)?;
     match tags.album_artists {
         Some(artists) => new_tags.set_album_artist(&artists.join(new_tags.config().sep_artist)),

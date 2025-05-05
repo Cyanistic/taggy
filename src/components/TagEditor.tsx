@@ -8,10 +8,11 @@ import {
 import { Save, X } from "lucide-solid";
 import { Button } from "./ui/button";
 import { TextField, TextFieldLabel, TextFieldRoot } from "./ui/textfield";
-import { createEffect, createSignal, JSX, Show } from "solid-js";
+import { createEffect, createMemo, createSignal, JSX, Show } from "solid-js";
 import { useAppContext } from "./AppContext";
 import { invoke } from "@tauri-apps/api/core";
 import { display, getData } from "@/utils";
+import { TagInput } from "./TagInput";
 
 export default function TagEditor() {
   const {
@@ -20,12 +21,34 @@ export default function TagEditor() {
     selectedCover,
     setAudioFile,
     setSelectedCover,
+    audioFiles,
   } = useAppContext();
   const [formData, setFormData] = createSignal(selectedAudioFile()!);
 
   const handleReset = () => {
     setFormData(selectedAudioFile()!);
   };
+
+  const allArtists = createMemo(() =>
+    Object.values(audioFiles())
+      .filter((file) => file.artist)
+      .map((file) => file.artist!)
+      .filter((artist, index, self) => self.indexOf(artist) === index),
+  );
+
+  const allAlbums = createMemo(() =>
+    Object.values(audioFiles())
+      .filter((file) => file.albumTitle)
+      .map((file) => file.albumTitle!)
+      .filter((album, index, self) => self.indexOf(album) === index),
+  );
+
+  const allGenres = createMemo(() =>
+    Object.values(audioFiles())
+      .filter((file) => file.genre)
+      .map((file) => file.genre!)
+      .filter((genre, index, self) => self.indexOf(genre) === index),
+  );
 
   createEffect(() => {
     handleReset();
@@ -71,7 +94,7 @@ export default function TagEditor() {
               <TextField
                 id="title"
                 name="title"
-                value={formData().title}
+                value={formData().title || ""}
                 placeholder={selectedAudioFile()?.title}
                 onInput={handleInputInput}
                 type="text"
@@ -82,13 +105,16 @@ export default function TagEditor() {
           <div class="space-y-2">
             <TextFieldRoot>
               <TextFieldLabel>Artist</TextFieldLabel>
-              <TextField
-                id="artist"
-                name="artist"
-                value={formData().artist}
+              <TagInput
+                input={formData().artist || ""}
                 placeholder={selectedAudioFile()?.artist}
-                onInput={handleInputInput}
-                type="text"
+                onChange={(value) => {
+                  setFormData((prev) => ({
+                    ...prev,
+                    artist: value,
+                  }));
+                }}
+                suggestions={allArtists()}
               />
             </TextFieldRoot>
           </div>
@@ -96,13 +122,16 @@ export default function TagEditor() {
           <div class="space-y-2">
             <TextFieldRoot>
               <TextFieldLabel>Album</TextFieldLabel>
-              <TextField
-                id="albumTitle"
-                name="albumTitle"
-                value={formData().albumTitle}
+              <TagInput
+                input={formData().albumTitle || ""}
                 placeholder={selectedAudioFile()?.albumTitle}
-                onInput={handleInputInput}
-                type="text"
+                onChange={(value) => {
+                  setFormData((prev) => ({
+                    ...prev,
+                    albumTitle: value,
+                  }));
+                }}
+                suggestions={allAlbums()}
               />
             </TextFieldRoot>
           </div>
@@ -110,13 +139,16 @@ export default function TagEditor() {
           <div class="space-y-2">
             <TextFieldRoot>
               <TextFieldLabel>Album Artist</TextFieldLabel>
-              <TextField
-                id="albumArtist"
-                name="albumArtist"
-                value={formData().albumArtist}
-                placeholder={selectedAudioFile()?.albumArtist}
-                onInput={handleInputInput}
-                type="text"
+              <TagInput
+                input={formData().albumArtists ?? []}
+                placeholder="Search artists..."
+                onSelect={(value) => {
+                  setFormData((prev) => ({
+                    ...prev,
+                    albumArtists: Array.isArray(value) ? value : [value],
+                  }));
+                }}
+                suggestions={allArtists()}
               />
             </TextFieldRoot>
           </div>
@@ -138,13 +170,16 @@ export default function TagEditor() {
           <div class="space-y-2">
             <TextFieldRoot>
               <TextFieldLabel>Genre</TextFieldLabel>
-              <TextField
-                id="genre"
-                name="genre"
-                value={formData().genre}
+              <TagInput
+                input={formData().genre || ""}
                 placeholder={selectedAudioFile()?.genre}
-                onInput={handleInputInput}
-                type="text"
+                onChange={(value) => {
+                  setFormData((prev) => ({
+                    ...prev,
+                    genre: value,
+                  }));
+                }}
+                suggestions={allGenres()}
               />
             </TextFieldRoot>
           </div>
