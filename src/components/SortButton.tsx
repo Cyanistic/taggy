@@ -76,7 +76,7 @@ function Sortable(props: SortableProps) {
       class="sortable"
       classList={{
         "opacity-25": sortable.isActiveDraggable,
-        "transition-transform": !!state.active.draggable,
+        "transition-transform": !!state?.active.draggable,
       }}
     >
       {props.children}

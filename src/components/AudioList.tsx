@@ -69,6 +69,7 @@ export default function AudioList(props: AudioListProps) {
     { field: "albumArtists", label: "Album Artist", enabled: false },
     { field: "genre", label: "Genre", enabled: false },
     { field: "year", label: "Year", enabled: false },
+    { field: "path", label: "File Path", enabled: false },
   ]);
 
   // Sort criteria state
@@ -172,7 +173,7 @@ export default function AudioList(props: AudioListProps) {
                 placeholder="Search"
                 value={searchQuery()}
                 type="text"
-                onInput={(e) => setSearchQuery(e.target.value)}
+                onInput={(e) => setSearchQuery(e.currentTarget.value)}
               />
             </TextFieldRoot>
             <Show when={searchQuery()}>

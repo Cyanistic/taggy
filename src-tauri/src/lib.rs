@@ -1,5 +1,5 @@
 use std::{
-    fs::{self, File},
+    fs::self,
     io::ErrorKind,
     path::{Path, PathBuf},
 };
@@ -123,7 +123,6 @@ fn get_audio_cover(path: &Path) -> Result<Option<String>> {
 
 #[tauri::command(rename_all = "camelCase", async)]
 fn save_audio_tags(tags: AudioFile, remove_cover: bool) -> Result<()> {
-    dbg!(&tags);
     let mut new_tags = Tag::new().read_from_path(&tags.path)?;
     match tags.album_artists {
         Some(artists) => new_tags.set_album_artist(&artists.join(new_tags.config().sep_artist)),
@@ -187,6 +186,8 @@ fn save_audio_tags(tags: AudioFile, remove_cover: bool) -> Result<()> {
             new_tags.set_album_cover(Picture::new(&fs::read(cover)?, mime));
         }
     }
-    new_tags.write_to(&mut File::create(&tags.path)?)?;
+    // Must use `write_to_path` instead of `write_to` because the latter
+    // breaks the audio file for some reason
+    new_tags.write_to_path(&tags.path.display().to_string())?;
     Ok(())
 }
