@@ -24,7 +24,7 @@ export interface FilterProps {
 
 export default function FilterButton(props: FilterProps) {
   return (
-    <DropdownMenu>
+    <DropdownMenu placement="bottom">
       <DropdownMenuTrigger>
         <Button
           variant="outline"

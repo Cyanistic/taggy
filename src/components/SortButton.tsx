@@ -42,6 +42,11 @@ export interface SortCriterion {
   direction: "asc" | "desc";
 }
 
+export const DEFUALT_SORT_CRITERIA: SortCriterion[] = [
+  { label: "Best Match", field: "score", direction: "asc" },
+  { label: "Title", field: "title", direction: "asc" },
+];
+
 interface SortableCriteriaListProps {
   criteria: SortCriterion[];
   onChange: (newCriteria: SortCriterion[]) => void;
@@ -99,7 +104,7 @@ export function SortDropdown(props: EnhancedSortDropdownProps) {
         }
       }
       // Default if nothing saved
-      return [{ label: "Title", field: "title", direction: "asc" }];
+      return DEFUALT_SORT_CRITERIA;
     })(),
   );
 
@@ -135,7 +140,7 @@ export function SortDropdown(props: EnhancedSortDropdownProps) {
   };
 
   const handleResetCriteria = () => {
-    setSortCriteria([{ label: "Title", field: "title", direction: "asc" }]);
+    setSortCriteria(DEFUALT_SORT_CRITERIA);
   };
 
   const handleCriteriaChange = (newCriteria: SortCriterion[]) => {
@@ -169,7 +174,9 @@ export function SortDropdown(props: EnhancedSortDropdownProps) {
       </DropdownMenuTrigger>
       <DropdownMenuContent class="w-64 justify-end">
         <DropdownMenuGroup>
-          <DropdownMenuGroupLabel>Sort criteria</DropdownMenuGroupLabel>
+          <DropdownMenuGroupLabel title="Order your sorting criteria in priority from highest to lowest">
+            Sort criteria
+          </DropdownMenuGroupLabel>
           <DropdownMenuSeparator />
 
           {/* Display sortable list of current criteria */}

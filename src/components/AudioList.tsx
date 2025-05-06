@@ -10,7 +10,11 @@ import { createMemo, createSignal } from "solid-js";
 import Fuse from "fuse.js";
 import { createDebouncedSignal } from "@tanstack/solid-pacer";
 import FilterButton, { FilterField } from "./FilterButton";
-import { SortDropdown as SortDropdown, SortCriterion } from "./SortButton";
+import {
+  SortDropdown as SortDropdown,
+  SortCriterion,
+  DEFUALT_SORT_CRITERIA,
+} from "./SortButton";
 import { Badge } from "./ui/badge";
 
 interface AudioListProps {
@@ -28,6 +32,11 @@ function compareValues(
   if (a == null && b == null) return 0;
   if (a == null) return direction === "asc" ? -1 : 1;
   if (b == null) return direction === "asc" ? 1 : -1;
+
+  // **New**: numeric comparison for actual numbers
+  if (typeof a === "number" && typeof b === "number") {
+    return direction === "asc" ? a - b : b - a;
+  }
 
   // Handle numeric values (like year)
   if (
@@ -73,17 +82,19 @@ export default function AudioList(props: AudioListProps) {
   ]);
 
   // Sort criteria state
-  const [sortCriteria, setSortCriteria] = createSignal<SortCriterion[]>([
-    { label: "Title", field: "title", direction: "asc" },
-  ]);
+  const [sortCriteria, setSortCriteria] = createSignal<SortCriterion[]>(
+    DEFUALT_SORT_CRITERIA,
+  );
 
   // Sort options that can be added to criteria
   const sortOptions = [
+    { label: "Best Match", value: "score" },
     { label: "Title", value: "title" },
     { label: "Artist", value: "artist" },
     { label: "Album", value: "album" },
     { label: "Year", value: "year" },
     { label: "Genre", value: "genre" },
+    { label: "File Path", value: "path" },
   ];
 
   const fuse = createMemo<Fuse<AudioFile>>(() => {
@@ -92,10 +103,31 @@ export default function AudioList(props: AudioListProps) {
         .filter((f) => f.enabled)
         .map((f) => f.field),
       minMatchCharLength: 1,
-      ignoreLocation: false,
+      threshold: 0.4,
       // Add smart case functionality
       isCaseSensitive: searchQuery().toLocaleLowerCase() !== searchQuery(),
+      includeScore: true,
     });
+  });
+
+  const sortFn = createMemo(() => (a: unknown, b: unknown) => {
+    // Handle multi-criteria sorting
+    for (const criterion of sortCriteria()) {
+      //@ts-expect-error we already check this
+      const fieldA = a[criterion.field];
+      //@ts-expect-error we already check this
+      const fieldB = b[criterion.field];
+
+      const comparison = compareValues(fieldA, fieldB, criterion.direction);
+
+      // If items are equal on this criterion, continue to the next criterion
+      if (comparison !== 0) {
+        return comparison;
+      }
+    }
+
+    // If all criteria are equal, maintain original order
+    return 0;
   });
 
   // 2) Reactive filtered + sorted files
@@ -104,27 +136,10 @@ export default function AudioList(props: AudioListProps) {
     const list = q
       ? fuse()
           .search(q)
-          .map((r) => r.item)
+          .map((r) => ({ ...r.item, score: r.score }))
       : Object.values(audioFiles());
-    return list.sort((a, b) => {
-      // Handle multi-criteria sorting
-      for (const criterion of sortCriteria()) {
-        //@ts-expect-error we already check this
-        const fieldA = a[criterion.field] || "";
-        //@ts-expect-error we already check this
-        const fieldB = b[criterion.field] || "";
-
-        const comparison = compareValues(fieldA, fieldB, criterion.direction);
-
-        // If items are equal on this criterion, continue to the next criterion
-        if (comparison !== 0) {
-          return comparison;
-        }
-      }
-
-      // If all criteria are equal, maintain original order
-      return 0;
-    });
+    list.sort(sortFn());
+    return list;
   });
 
   let listRef!: HTMLDivElement;
@@ -206,11 +221,10 @@ export default function AudioList(props: AudioListProps) {
         <div class="flex flex-wrap items-center text-sm text-muted-foreground gap-1 mt-2">
           <span class="mr-1">Sorting by:</span>
           <For each={sortCriteria()}>
-            {(criterion, index) => (
+            {(criterion) => (
               <Badge variant="outline" class="bg-primary/5 border-primary/20">
                 {criterion.label}
                 {criterion.direction === "asc" ? "↑" : "↓"}
-                {index() < sortCriteria().length - 1 ? ", " : ""}
               </Badge>
             )}
           </For>
