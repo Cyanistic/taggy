@@ -44,12 +44,8 @@ export function TagMenu() {
               </div>
             }
           >
-            {(selectedAudioFile) => (
-              <>
-                <AudioPreview file={selectedAudioFile()} />
-                <TagEditor />
-              </>
-            )}
+            <AudioPreview />
+            <TagEditor />
           </Show>
         </Show>
       </div>
@@ -57,7 +53,6 @@ export function TagMenu() {
       {/* Right side - File List */}
       <div class="w-full md:w-1/2 p-4 overflow-y-auto">
         <AudioList
-          files={audioFiles()}
           selectedFile={selectedFile() ?? undefined}
           onSelect={(e: string) => {
             setSelectedFile(e);

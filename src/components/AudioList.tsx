@@ -16,6 +16,7 @@ import {
   DEFUALT_SORT_CRITERIA,
 } from "./SortButton";
 import { Badge } from "./ui/badge";
+import { ThemeToggle } from "./ThemeSelector";
 
 interface AudioListProps {
   selectedFile?: string;
@@ -172,10 +173,20 @@ export default function AudioList(props: AudioListProps) {
     <div class="flex flex-col h-full">
       <div class="flex flex-col justify-between">
         <div class="flex justify-between">
-          <h2 class="text-2xl font-bold mb-4">Audio Files</h2>
-          <Button onClick={addAudioDirectory}>
-            <FolderPlus class="-mx-2" />
-          </Button>
+          <div>
+            <h2 class="text-2xl font-bold mb-4">Audio Files</h2>
+          </div>
+          <div class="space-x-2">
+            <ThemeToggle />
+            <Button
+              variant="outline"
+              size="icon"
+              class="bg-background border-primary/20 hover:bg-accent hover:text-accent-foreground"
+              onClick={addAudioDirectory}
+            >
+              <FolderPlus class="h-[1.2rem] w-[1.2rem]" />
+            </Button>
+          </div>
         </div>
         <div class="flex gap-2">
           <div class="flex-1 relative">
@@ -223,8 +234,7 @@ export default function AudioList(props: AudioListProps) {
           <For each={sortCriteria()}>
             {(criterion) => (
               <Badge variant="outline" class="bg-primary/5 border-primary/20">
-                {criterion.label}
-                {criterion.direction === "asc" ? "↑" : "↓"}
+                {criterion.label} {criterion.direction === "asc" ? "↑" : "↓"}
               </Badge>
             )}
           </For>
