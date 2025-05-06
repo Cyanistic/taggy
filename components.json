@@ -1,9 +1,9 @@
 {
   "$schema": "https://shadcn-solid.com/schema.json",
   "tailwind": {
-    "config": "tailwind.config.ts",
+    "config": "tailwind.config.cjs",
     "css": {
-      "path": "src/app.css",
+      "path": "src/styles/globals.css",
       "variable": true
     },
     "color": "slate",
