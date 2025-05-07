@@ -17,6 +17,7 @@ import {
 } from "./SortButton";
 import { Badge } from "./ui/badge";
 import { ThemeToggle } from "./ThemeSelector";
+import DirectoryButton from "./DirectoryButton";
 
 interface AudioListProps {
   selectedFile?: string;
@@ -178,14 +179,7 @@ export default function AudioList(props: AudioListProps) {
           </div>
           <div class="space-x-2">
             <ThemeToggle />
-            <Button
-              variant="outline"
-              size="icon"
-              class="bg-background border-primary/20 hover:bg-accent hover:text-accent-foreground"
-              onClick={addAudioDirectory}
-            >
-              <FolderPlus class="h-[1.2rem] w-[1.2rem]" />
-            </Button>
+            <DirectoryButton />
           </div>
         </div>
         <div class="flex gap-2">

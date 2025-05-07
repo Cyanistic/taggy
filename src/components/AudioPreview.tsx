@@ -202,7 +202,7 @@ export default function AudioPreview() {
                 ref={audioRef}
                 src={audioSrc() ?? undefined}
                 onTimeUpdate={handleTimeUpdate}
-                onLoadedMetadata={handleLoadedMetadata}
+                onDurationChange={handleLoadedMetadata}
                 onEnded={() => setIsPlaying(false)}
                 autoplay={isPlaying()}
                 class="hidden"

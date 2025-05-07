@@ -21,13 +21,13 @@ export function TagMenu() {
       {/* Left side - Preview and Tag Editor */}
       <div class="w-full h-screen md:w-1/2 p-4 border-r border-border overflow-y-auto">
         <Show
-          when={audioDirectories().length}
+          when={audioDirectories().size}
           fallback={
             <div class="flex flex-col items-center justify-center h-full gap-4">
               <p class="text-muted-foreground">
                 Please add an audio directory to check for audio files
               </p>
-              <Button onClick={addAudioDirectory}>
+              <Button onClick={() => addAudioDirectory()}>
                 <FolderPlus class="mr-2" />
                 Select Audio Directory
               </Button>

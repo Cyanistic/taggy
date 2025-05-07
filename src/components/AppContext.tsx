@@ -17,12 +17,13 @@ interface AppContextValue {
   audioFiles: Accessor<Record<string, AudioFile>>;
   selectedFile: Accessor<string | null>;
   selectedAudioFile: Accessor<AudioFile | null>;
-  audioDirectories: Accessor<string[]>;
+  audioDirectories: Accessor<Set<string>>;
   selectedCover: Accessor<CoverData | null | undefined>;
   setSelectedCover: Setter<CoverData | null | undefined>;
   setAudioFile: (key: string, value: AudioFile | undefined) => void;
   setSelectedFile: (file: string | null) => void;
-  addAudioDirectory: () => Promise<void>;
+  addAudioDirectory: (directory?: string) => Promise<void>;
+  removeAudioDirectory: (directory: string) => void;
 }
 
 type Result<T, E = unknown> = { Ok: T; Err: null } | { Ok: null; Err: E };
@@ -39,25 +40,26 @@ export function AppProvider(props: { children: JSX.Element }) {
   >(undefined);
   const [selectedAudioFile, updateSelectedAudioFile] =
     createSignal<AudioFile | null>(null);
-  const [audioDirectories, setAudioDirectories] = createSignal<string[]>([]);
-  let onFileProcessed!: Channel<Result<AudioFile>>;
+  const [audioDirectories, setAudioDirectories] = createSignal<Set<string>>(
+    new Set(),
+  );
   onMount(() => {
-    onFileProcessed = new Channel<Result<AudioFile>>((result) => {
-      if (result.Ok) {
-        const audioFile = result.Ok;
-        if (audioFile.cover) {
-          audioFile.cover = URL.createObjectURL(
-            convertBase64ToBlob(audioFile.cover),
-          );
-        }
-        setAudioFiles((prev) => ({
-          ...prev,
-          [audioFile.path]: audioFile,
-        }));
-      } else {
-        console.error(result.Err);
+    (async () => {
+      try {
+        const dirs = localStorage.getItem("audioDirectories");
+        if (!dirs) return;
+        const audioDirectories = JSON.parse(dirs);
+        if (!Array.isArray(audioDirectories)) return;
+        const results = await Promise.allSettled(
+          (audioDirectories as string[]).map(
+            async (dir) => await addAudioDirectory(dir),
+          ),
+        );
+        console.log(results);
+      } catch (e) {
+        console.error("Error loading existing audio directories", e);
       }
-    });
+    })();
   });
 
   createEffect(() => {
@@ -68,6 +70,13 @@ export function AppProvider(props: { children: JSX.Element }) {
   createEffect(() => {
     const selected = selectedFile();
     updateSelectedAudioFile(selected ? audioFiles()[selected] : null);
+  });
+
+  createEffect(() => {
+    localStorage.setItem(
+      "audioDirectories",
+      JSON.stringify([...audioDirectories()]),
+    );
   });
 
   const setSelectedFile = (file: string | null) => {
@@ -87,19 +96,82 @@ export function AppProvider(props: { children: JSX.Element }) {
     });
   };
 
-  const addAudioDirectory = async () => {
-    const selected = await open({
-      title: "Select your music directory",
-      directory: true,
-      multiple: false,
+  // Can be used to add or refresh a directory
+  const addAudioDirectory = async (directory?: string) => {
+    if (!directory) {
+      directory =
+        (await open({
+          title: "Select your music directory",
+          directory: true,
+          multiple: false,
+        })) ?? undefined;
+    }
+    if (!directory) return;
+
+    const onFileProcessed = new Channel<Result<AudioFile>>((result) => {
+      if (result.Ok) {
+        const audioFile = result.Ok;
+        if (audioFile.cover) {
+          audioFile.cover = URL.createObjectURL(
+            convertBase64ToBlob(audioFile.cover),
+          );
+        }
+        setAudioFiles((prev) => ({
+          ...prev,
+          [audioFile.path]: audioFile,
+        }));
+      } else {
+        console.error(result.Err);
+      }
     });
-    if (!selected) return;
-    const newFiles: Record<string, AudioFile> = await invoke("load_audio_dir", {
-      directory: selected,
-      onFileProcessed,
+    try {
+      await invoke("load_audio_dir", {
+        directory,
+        onFileProcessed,
+      });
+      setAudioDirectories((prev) => {
+        // if it’s already in there, no-op
+        if (prev.has(directory)) return prev;
+        const next = new Set(prev);
+        next.add(directory);
+        return next;
+      });
+    } catch (e) {
+      console.error("Error adding new audio directory", e);
+    }
+  };
+
+  const removeAudioDirectory = (directory: string) => {
+    if (!audioDirectories().has(directory)) return;
+    setAudioDirectories((prev) => {
+      const next = new Set(prev);
+      next.delete(directory);
+      for (const dir of next) {
+        // The removed directory is a child of the others
+        // so there are no audio files to remove
+        if (directory.startsWith(dir)) {
+          return next;
+        }
+      }
+      setAudioFiles((prev) =>
+        Object.fromEntries(
+          Object.entries(prev).filter(([path]) => {
+            // The path starts with the directory so we need
+            // to remove it if there are no child paths that also
+            // start with it.
+            if (path.startsWith(directory)) {
+              for (const dir of next) {
+                if (path.startsWith(dir)) {
+                  return false;
+                }
+              }
+            }
+            return true;
+          }),
+        ),
+      );
+      return next;
     });
-    setAudioFiles({ ...audioFiles(), ...newFiles });
-    setAudioDirectories([...audioDirectories(), selected]);
   };
 
   const value: AppContextValue = {
@@ -112,6 +184,7 @@ export function AppProvider(props: { children: JSX.Element }) {
     selectedCover,
     setSelectedCover,
     setAudioFile,
+    removeAudioDirectory,
   };
 
   return (
