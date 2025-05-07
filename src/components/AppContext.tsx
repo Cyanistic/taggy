@@ -1,25 +1,20 @@
+// src/AppContext.tsx
 import {
   createContext,
-  createSignal,
   useContext,
   JSX,
-  Accessor,
   onMount,
   createEffect,
-  Setter,
 } from "solid-js";
+import { createStore, produce } from "solid-js/store";
 import { AudioFile, CoverData } from "@/types";
 import { open } from "@tauri-apps/plugin-dialog";
 import { Channel, invoke } from "@tauri-apps/api/core";
 import { convertBase64ToBlob } from "@/utils";
 
 interface AppContextValue {
-  audioFiles: Accessor<Record<string, AudioFile>>;
-  selectedFile: Accessor<string | null>;
-  selectedAudioFile: Accessor<AudioFile | null>;
-  audioDirectories: Accessor<Set<string>>;
-  selectedCover: Accessor<CoverData | null | undefined>;
-  setSelectedCover: Setter<CoverData | null | undefined>;
+  state: AppState,
+  setSelectedCover: (cover: CoverData | null | undefined) => void;
   setAudioFile: (key: string, value: AudioFile | undefined) => void;
   setSelectedFile: (file: string | null) => void;
   addAudioDirectory: (directory?: string) => Promise<void>;
@@ -29,173 +24,172 @@ interface AppContextValue {
 type Result<T, E = unknown> = { Ok: T; Err: null } | { Ok: null; Err: E };
 const AppContext = createContext<AppContextValue>();
 
+interface AppState {
+  audioFiles: Record<string, AudioFile>;
+  selectedFile: string | null;
+  selectedAudioFile: AudioFile | null;
+  audioDirectories: Record<string, string[]>;
+  selectedCover: CoverData | null | undefined;
+}
+
+interface AudioDirectoryValue {
+  scanning: boolean;
+  files: string[];
+}
+
 export function AppProvider(props: { children: JSX.Element }) {
-  const [audioFiles, setAudioFiles] = createSignal<Record<string, AudioFile>>(
-    {},
-  );
-  const [selectedFile, updateSelectedFile] = createSignal<string | null>(null);
-  // Use undefined to indicate unchanged and null to indicate cover removed
-  const [selectedCover, setSelectedCover] = createSignal<
-    CoverData | null | undefined
-  >(undefined);
-  const [selectedAudioFile, updateSelectedAudioFile] =
-    createSignal<AudioFile | null>(null);
-  const [audioDirectories, setAudioDirectories] = createSignal<Set<string>>(
-    new Set(),
-  );
+  // central store
+  const [state, setState] = createStore<AppState>({
+    audioFiles: {},
+    selectedFile: null,
+    selectedAudioFile: null,
+    audioDirectories: {},
+    selectedCover: undefined,
+  });
+
+  // on init, rehydrate list of directories from localStorage
   onMount(() => {
     (async () => {
       try {
-        const dirs = localStorage.getItem("audioDirectories");
-        if (!dirs) return;
-        const audioDirectories = JSON.parse(dirs);
-        if (!Array.isArray(audioDirectories)) return;
-        const results = await Promise.allSettled(
-          (audioDirectories as string[]).map(
-            async (dir) => await addAudioDirectory(dir),
-          ),
-        );
-        console.log(results);
+        const raw = localStorage.getItem("audioDirectories");
+        if (!raw) return;
+        const dirs: string[] = JSON.parse(raw);
+        for (const dir of dirs) {
+          await addAudioDirectory(dir);
+        }
       } catch (e) {
         console.error("Error loading existing audio directories", e);
       }
     })();
   });
 
-  createEffect(() => {
-    selectedFile();
-    setSelectedCover(undefined);
-  });
-
-  createEffect(() => {
-    const selected = selectedFile();
-    updateSelectedAudioFile(selected ? audioFiles()[selected] : null);
-  });
-
+  // persist only the *keys* (the directory paths)
   createEffect(() => {
     localStorage.setItem(
       "audioDirectories",
-      JSON.stringify([...audioDirectories()]),
+      JSON.stringify(Object.keys(state.audioDirectories)),
     );
   });
 
-  const setSelectedFile = (file: string | null) => {
-    updateSelectedFile(file);
-    updateSelectedAudioFile(file ? audioFiles()[file] : null);
-  };
+  // when you pick a file, clear cover and update the selected AudioFile
+  createEffect(() => {
+    const key = state.selectedFile;
+    setState(
+      produce((s) => {
+        s.selectedAudioFile = key ? s.audioFiles[key] : null;
+        s.selectedCover = undefined;
+      }),
+    );
+  });
 
   const setAudioFile = (key: string, value: AudioFile | undefined) => {
-    setAudioFiles((prev) => {
-      if (!value) {
-        const temp = { ...prev };
-        delete temp[key];
-        return temp;
-      } else {
-        return { ...prev, [key]: value };
-      }
-    });
+    setState(
+      produce((s) => {
+        if (value) {
+          s.audioFiles[key] = value;
+        } else {
+          delete s.audioFiles[key];
+        }
+        // if you just deleted the currently‐selected file, clear selection
+        if (s.selectedFile === key) {
+          s.selectedFile = null;
+          s.selectedAudioFile = null;
+        }
+      }),
+    );
   };
 
-  // Can be used to add or refresh a directory
+  const setSelectedFile = (file: string | null) => {
+    setState(
+      produce((s) => {
+        s.selectedFile = file;
+        s.selectedAudioFile = file ? s.audioFiles[file] : null;
+      }),
+    );
+  };
+
+  const setSelectedCover = (cover: CoverData | null | undefined) => {
+    setState(
+      produce((s) => {
+        s.selectedCover = cover;
+      }),
+    );
+  };
+
   const addAudioDirectory = async (directory?: string) => {
     if (!directory) {
       directory =
         (await open({
           title: "Select your music directory",
           directory: true,
-          multiple: false,
-        })) ?? undefined;
+        })) || undefined;
     }
     if (!directory) return;
 
+    // initialize the array for this directory
+    setState(
+      produce((s) => {
+        s.audioDirectories[directory!] = [];
+      }),
+    );
+
+    // channel callback from your Rust/Tauri side
     const onFileProcessed = new Channel<Result<AudioFile>>((result) => {
       if (result.Ok) {
         const audioFile = result.Ok;
+        // wire up cover blob URL
         if (audioFile.cover) {
           audioFile.cover = URL.createObjectURL(
             convertBase64ToBlob(audioFile.cover),
           );
         }
-        setAudioFiles((prev) => ({
-          ...prev,
-          [audioFile.path]: audioFile,
-        }));
-      } else {
-        console.error(result.Err);
+        // stash in flat map
+        setAudioFile(audioFile.path, audioFile);
+        // *and* track under this directory
+        setState(
+          produce((s) => {
+            s.audioDirectories[directory!].push(audioFile.path);
+          }),
+        );
       }
     });
+
     try {
-      await invoke("load_audio_dir", {
-        directory,
-        onFileProcessed,
-      });
-      setAudioDirectories((prev) => {
-        // if it’s already in there, no-op
-        if (prev.has(directory)) return prev;
-        const next = new Set(prev);
-        next.add(directory);
-        return next;
-      });
+      await invoke("load_audio_dir", { directory, onFileProcessed });
     } catch (e) {
       console.error("Error adding new audio directory", e);
     }
   };
 
   const removeAudioDirectory = (directory: string) => {
-    if (!audioDirectories().has(directory)) return;
-    setAudioDirectories((prev) => {
-      const next = new Set(prev);
-      next.delete(directory);
-      for (const dir of next) {
-        // The removed directory is a child of the others
-        // so there are no audio files to remove
-        if (directory.startsWith(dir)) {
-          return next;
-        }
-      }
-      setAudioFiles((prev) =>
-        Object.fromEntries(
-          Object.entries(prev).filter(([path]) => {
-            // The path starts with the directory so we need
-            // to remove it if there are no child paths that also
-            // start with it.
-            if (path.startsWith(directory)) {
-              for (const dir of next) {
-                if (path.startsWith(dir)) {
-                  return false;
-                }
-              }
-            }
-            return true;
-          }),
-        ),
-      );
-      return next;
-    });
+    if (!(directory in state.audioDirectories)) return;
+
+    setState(
+      produce((s) => {
+        // delete the directory entry
+        delete s.audioDirectories[directory];
+      }),
+    );
   };
 
-  const value: AppContextValue = {
-    audioFiles,
-    selectedFile,
-    setSelectedFile,
-    selectedAudioFile,
-    audioDirectories,
-    addAudioDirectory,
-    selectedCover,
+  const contextValue: AppContextValue = {
+    state,
     setSelectedCover,
     setAudioFile,
+    setSelectedFile,
+    addAudioDirectory,
     removeAudioDirectory,
   };
 
   return (
-    <AppContext.Provider value={value}>{props.children}</AppContext.Provider>
+    <AppContext.Provider value={contextValue}>
+      {props.children}
+    </AppContext.Provider>
   );
 }
 
 export function useAppContext() {
-  const context = useContext(AppContext);
-  if (!context) {
-    throw new Error("useAppContext must be used within an AppProvider");
-  }
-  return context;
+  const ctx = useContext(AppContext);
+  if (!ctx) throw new Error("useAppContext must be used within AppProvider");
+  return ctx;
 }

@@ -15,36 +15,29 @@ import { display, getData } from "@/utils";
 import { TagInput } from "./TagInput";
 
 export default function TagEditor() {
-  const {
-    selectedAudioFile,
-    selectedFile,
-    selectedCover,
-    setAudioFile,
-    setSelectedCover,
-    audioFiles,
-  } = useAppContext();
-  const [formData, setFormData] = createSignal(selectedAudioFile()!);
+  const { state, setAudioFile, setSelectedCover } = useAppContext();
+  const [formData, setFormData] = createSignal(state.selectedAudioFile!);
 
   const handleReset = () => {
-    setFormData(selectedAudioFile()!);
+    setFormData(state.selectedAudioFile!);
   };
 
   const allArtists = createMemo(() =>
-    Object.values(audioFiles())
+    Object.values(state.audioFiles)
       .filter((file) => file.artist)
       .map((file) => file.artist!)
       .filter((artist, index, self) => self.indexOf(artist) === index),
   );
 
   const allAlbums = createMemo(() =>
-    Object.values(audioFiles())
+    Object.values(state.audioFiles)
       .filter((file) => file.albumTitle)
       .map((file) => file.albumTitle!)
       .filter((album, index, self) => self.indexOf(album) === index),
   );
 
   const allGenres = createMemo(() =>
-    Object.values(audioFiles())
+    Object.values(state.audioFiles)
       .filter((file) => file.genre)
       .map((file) => file.genre!)
       .filter((genre, index, self) => self.indexOf(genre) === index),
@@ -64,17 +57,17 @@ export default function TagEditor() {
     MouseEvent
   > = async () => {
     try {
-      const cover = selectedCover();
+      const cover = state.selectedCover;
       const tags = {
         ...formData(),
         cover: cover ? getData(cover) : undefined,
       };
       await invoke("save_audio_tags", {
         tags,
-        removeCover: selectedCover() === null,
+        removeCover: state.selectedCover === null,
       });
       tags.cover = cover ? display(cover) : undefined;
-      setAudioFile(selectedFile()!, tags);
+      setAudioFile(state.selectedFile!, tags);
       setSelectedCover(undefined);
     } catch (e) {
       console.error(e);
@@ -95,7 +88,7 @@ export default function TagEditor() {
                 id="title"
                 name="title"
                 value={formData().title || ""}
-                placeholder={selectedAudioFile()?.title}
+                placeholder={state.selectedAudioFile?.title}
                 onInput={handleInputInput}
                 type="text"
               />
@@ -107,7 +100,7 @@ export default function TagEditor() {
               <TextFieldLabel>Artist</TextFieldLabel>
               <TagInput
                 input={formData().artist ?? ""}
-                placeholder={selectedAudioFile()?.artist ?? ""}
+                placeholder={state.selectedAudioFile?.artist ?? ""}
                 onChange={(value) => {
                   setFormData((prev) => ({
                     ...prev,
@@ -124,7 +117,7 @@ export default function TagEditor() {
               <TextFieldLabel>Album</TextFieldLabel>
               <TagInput
                 input={formData().albumTitle ?? ""}
-                placeholder={selectedAudioFile()?.albumTitle ?? ""}
+                placeholder={state.selectedAudioFile?.albumTitle ?? ""}
                 onChange={(value) => {
                   setFormData((prev) => ({
                     ...prev,
@@ -160,7 +153,7 @@ export default function TagEditor() {
                 id="year"
                 name="year"
                 value={formData().year}
-                placeholder={selectedAudioFile()?.year}
+                placeholder={state.selectedAudioFile?.year}
                 onInput={handleInputInput}
                 type="number"
               />
@@ -172,7 +165,7 @@ export default function TagEditor() {
               <TextFieldLabel>Genre</TextFieldLabel>
               <TagInput
                 input={formData().genre ?? ""}
-                placeholder={selectedAudioFile()?.genre ?? ""}
+                placeholder={state.selectedAudioFile?.genre ?? ""}
                 onChange={(value) => {
                   setFormData((prev) => ({
                     ...prev,
@@ -190,8 +183,8 @@ export default function TagEditor() {
           when={
             // Only show the save changes button if there are changes to be saved
             JSON.stringify(formData()) !==
-              JSON.stringify(selectedAudioFile()) ||
-            selectedCover() !== undefined
+              JSON.stringify(state.selectedAudioFile) ||
+            state.selectedCover !== undefined
           }
         >
           <div class="flex w-full space-x-4">

@@ -8,11 +8,8 @@ import { useAppContext } from "./AppContext";
 
 export function TagMenu() {
   const {
-    audioFiles,
-    selectedAudioFile,
-    selectedFile,
+    state,
     setSelectedFile,
-    audioDirectories,
     addAudioDirectory,
   } = useAppContext();
 
@@ -21,7 +18,7 @@ export function TagMenu() {
       {/* Left side - Preview and Tag Editor */}
       <div class="w-full h-screen md:w-1/2 p-4 border-r border-border overflow-y-auto">
         <Show
-          when={audioDirectories().size}
+          when={Object.keys(state.audioDirectories).length}
           fallback={
             <div class="flex flex-col items-center justify-center h-full gap-4">
               <p class="text-muted-foreground">
@@ -35,7 +32,7 @@ export function TagMenu() {
           }
         >
           <Show
-            when={selectedAudioFile()}
+            when={state.selectedAudioFile}
             fallback={
               <div class="flex items-center justify-center h-full">
                 <p class="text-muted-foreground">
@@ -53,7 +50,7 @@ export function TagMenu() {
       {/* Right side - File List */}
       <div class="w-full md:w-1/2 p-4 overflow-y-auto">
         <AudioList
-          selectedFile={selectedFile() ?? undefined}
+          selectedFile={state.selectedFile ?? undefined}
           onSelect={(e: string) => {
             setSelectedFile(e);
           }}

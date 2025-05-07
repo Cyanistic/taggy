@@ -13,7 +13,7 @@ import { For } from "solid-js";
 import { FolderPlus, FolderX, Plus, RefreshCw } from "lucide-solid";
 
 export default function DirectoryButton() {
-  const { audioDirectories, addAudioDirectory, removeAudioDirectory } =
+  const { state, addAudioDirectory, removeAudioDirectory } =
     useAppContext();
   return (
     <DropdownMenu placement="bottom">
@@ -22,7 +22,6 @@ export default function DirectoryButton() {
           variant="outline"
           size="icon"
           class="bg-background border-primary/20 hover:bg-accent hover:text-accent-foreground"
-          // onClick={() => addAudioDirectory()}
         >
           <FolderPlus class="h-[1.2rem] w-[1.2rem]" />
         </Button>
@@ -32,7 +31,7 @@ export default function DirectoryButton() {
           <DropdownMenuGroupLabel>Audio Directories</DropdownMenuGroupLabel>
           <DropdownMenuSeparator />
           <For
-            each={[...audioDirectories()]}
+            each={Object.keys(state.audioDirectories)}
             fallback={
               <div class="px-2 py-1.5 text-sm text-muted-foreground">
                 No directories added

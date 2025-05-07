@@ -1,7 +1,7 @@
 import { AudioFile } from "@/types";
 import { createEffect, For, Show } from "solid-js";
 import AudioRow from "./AudioRow";
-import { FolderPlus, Search, X } from "lucide-solid";
+import { Search, X } from "lucide-solid";
 import { TextField, TextFieldRoot } from "./ui/textfield";
 import { Button } from "./ui/button";
 import { useAppContext } from "./AppContext";
@@ -69,8 +69,7 @@ export default function AudioList(props: AudioListProps) {
   const [searchQuery, setSearchQuery] = createDebouncedSignal("", {
     wait: 300,
   });
-  const { addAudioDirectory } = useAppContext();
-  const { audioFiles } = useAppContext();
+  const { state } = useAppContext();
 
   // Define filter fields based on AudioFile properties
   const [filterFields, setFilterFields] = createSignal<FilterField[]>([
@@ -100,7 +99,7 @@ export default function AudioList(props: AudioListProps) {
   ];
 
   const fuse = createMemo<Fuse<AudioFile>>(() => {
-    return new Fuse(Object.values(audioFiles()), {
+    return new Fuse(Object.values(state.audioFiles), {
       keys: filterFields()
         .filter((f) => f.enabled)
         .map((f) => f.field),
@@ -139,7 +138,7 @@ export default function AudioList(props: AudioListProps) {
       ? fuse()
           .search(q)
           .map((r) => ({ ...r.item, score: r.score }))
-      : Object.values(audioFiles());
+      : Object.values(state.audioFiles);
     list.sort(sortFn());
     return list;
   });

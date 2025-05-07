@@ -1,4 +1,5 @@
-import { createEffect, createSignal, JSX, onMount, Show } from "solid-js";
+import { createEffect, JSX, onMount, Show } from "solid-js";
+import { createStore, produce } from "solid-js/store";
 import { Card, CardContent } from "./ui/card";
 import {
   Edit,
@@ -19,12 +20,16 @@ import { AudioTypes, ImageTypes } from "@/types";
 import { invoke } from "@tauri-apps/api/core";
 
 export default function AudioPreview() {
-  const { selectedAudioFile, selectedCover, setSelectedCover } =
-    useAppContext();
-  const [isPlaying, setIsPlaying] = createSignal(false);
-  const [currentTime, setCurrentTime] = createSignal(0);
-  const [volume, setVolume] = createSignal(0.1);
-  const [duration, setDuration] = createSignal(100);
+  const { state, setSelectedCover } = useAppContext();
+
+  // consolidate state into a store
+  const [audioState, setAudioState] = createStore({
+    isPlaying: false,
+    currentTime: 0,
+    volume: 0.1,
+    duration: 100,
+    audioSrc: null as string | null,
+  });
   let audioRef!: HTMLAudioElement;
 
   const formatTime = (seconds: number) => {
@@ -34,41 +39,65 @@ export default function AudioPreview() {
   };
 
   const handleTimeUpdate: JSX.EventHandler<HTMLAudioElement, Event> = (e) => {
-    setCurrentTime(e.currentTarget.currentTime);
+    const t = e.currentTarget.currentTime;
+    setAudioState(
+      produce((s) => {
+        s.currentTime = t;
+      }),
+    );
   };
 
   const handleLoadedMetadata: JSX.EventHandler<HTMLAudioElement, Event> = (
     e,
   ) => {
-    setDuration(e.currentTarget.duration);
+    const d = e.currentTarget.duration;
+    setAudioState(
+      produce((s) => {
+        s.duration = d;
+      }),
+    );
   };
 
   const togglePlayback = () => {
-    setIsPlaying((prev) => {
-      if (prev) {
-        audioRef.pause();
-      } else {
-        audioRef.play();
-      }
-      return !prev;
-    });
+    setAudioState(
+      produce((s) => {
+        if (s.isPlaying) {
+          audioRef.pause();
+        } else {
+          audioRef.play();
+        }
+        s.isPlaying = !s.isPlaying;
+      }),
+    );
   };
 
-  const [audioSrc, setAudioSrc] = createSignal<string | null>(null);
+  // update audio source and reset time when selected file changes
   createEffect(() => {
     (async () => {
-      setCurrentTime(0);
-      setAudioSrc(
-        selectedAudioFile()
-          ? await fetchResource(selectedAudioFile()!.path)
-          : null,
+      const file = state.selectedAudioFile;
+      setAudioState(
+        produce((s) => {
+          s.currentTime = 0;
+          s.duration = 0;
+          s.isPlaying = false;
+        }),
+      );
+      const src = file ? await fetchResource(file.path) : null;
+      setAudioState(
+        produce((s) => {
+          s.audioSrc = src;
+          if (src) {
+            audioRef.pause();
+            audioRef.src = src;
+            audioRef.load();
+          }
+        }),
       );
     })();
   });
 
-  // Make sure the volume is actually synced with the audio element
   onMount(() => {
-    audioRef.volume = volume();
+    audioRef.volume = audioState.volume;
   });
 
   const handleImageSelection: JSX.EventHandler<
@@ -112,7 +141,7 @@ export default function AudioPreview() {
 
   return (
     <Card class="mb-6">
-      <Show when={selectedAudioFile()}>
+      <Show when={state.selectedAudioFile}>
         {(file) => (
           <CardContent class="p-6">
             <div class="flex flex-col items-center">
@@ -135,7 +164,7 @@ export default function AudioPreview() {
                           class="w-full h-full object-cover rounded-md transition-all duration-300 group-hover:brightness-50"
                         />
                         <button
-                          onClick={(e) => handleRemoveOriginalCover(e)}
+                          onClick={handleRemoveOriginalCover}
                           class="z-2 absolute top-2 right-2 p-1.5 rounded-full bg-destructive hover:bg-destructive/90 transition-all duration-300 opacity-0 group-hover:opacity-100"
                           aria-label="Remove existing cover"
                         >
@@ -160,11 +189,11 @@ export default function AudioPreview() {
                   </div>
 
                   {/* New cover preview */}
-                  <Show when={selectedCover() !== undefined}>
+                  <Show when={state.selectedCover !== undefined}>
                     <div class="absolute bottom-2 right-2 w-20 h-20">
                       <div class="relative w-full h-full rounded-md overflow-hidden shadow-lg border-2 border-primary">
                         <Show
-                          when={selectedCover()}
+                          when={state.selectedCover}
                           fallback={
                             <div class="w-full h-full bg-muted flex items-center justify-center">
                               <Music class="h-8 w-8 text-muted-foreground" />
@@ -173,7 +202,7 @@ export default function AudioPreview() {
                         >
                           {(newCover) => (
                             <img
-                              src={display(newCover())}
+                              src={display(newCover()!)}
                               alt="New cover preview"
                               class="w-full h-full object-cover"
                             />
@@ -200,29 +229,42 @@ export default function AudioPreview() {
 
               <audio
                 ref={audioRef}
-                src={audioSrc() ?? undefined}
+                // src={state.audioSrc ?? undefined}
+                preload="auto"
                 onTimeUpdate={handleTimeUpdate}
-                onDurationChange={handleLoadedMetadata}
-                onEnded={() => setIsPlaying(false)}
-                autoplay={isPlaying()}
+                onLoadedMetadata={handleLoadedMetadata}
+                onLoadedData={handleLoadedMetadata}
+                onEnded={() =>
+                  setAudioState(
+                    produce((s) => {
+                      s.isPlaying = false;
+                    }),
+                  )
+                }
+                autoplay={audioState.isPlaying}
                 class="hidden"
+                controls
               />
 
               {/* Playback Controls */}
               <div class="w-full space-y-2">
                 <div class="flex items-center justify-between text-xs text-muted-foreground">
-                  <span>{formatTime(currentTime())}</span>
-                  <span>{formatTime(duration())}</span>
+                  <span>{formatTime(audioState.currentTime)}</span>
+                  <span>{formatTime(audioState.duration)}</span>
                 </div>
                 <Slider
-                  value={[currentTime()]}
+                  value={[audioState.currentTime]}
                   step={1}
                   minValue={0}
-                  maxValue={duration()}
+                  maxValue={audioState.duration}
                   onChange={(value) => {
                     const val = value[0];
                     audioRef.currentTime = val;
-                    setCurrentTime(val);
+                    setAudioState(
+                      produce((s) => {
+                        s.currentTime = val;
+                      }),
+                    );
                   }}
                   class="w-full"
                 />
@@ -237,7 +279,7 @@ export default function AudioPreview() {
                     onClick={togglePlayback}
                   >
                     <Show
-                      when={isPlaying()}
+                      when={audioState.isPlaying}
                       fallback={<Play class="h-5 w-5 ml-0.5" />}
                     >
                       <Pause class="h-5 w-5" />
@@ -250,19 +292,23 @@ export default function AudioPreview() {
                 <div class="flex items-center gap-2 mt-2">
                   <Volume2 class="h-4 w-4 text-muted-foreground" />
                   <Slider
-                    defaultValue={[volume()]}
+                    value={[audioState.volume]}
                     minValue={0}
                     maxValue={1}
                     step={0.01}
                     onChange={(value: number[]) => {
                       const val: number = value[0];
                       audioRef.volume = val;
-                      setVolume(val);
+                      setAudioState(
+                        produce((s) => {
+                          s.volume = val;
+                        }),
+                      );
                     }}
                     class="w-24 mr-1"
                   />
                   <span class="text-xs text-muted-foreground w-8">
-                    {Math.round(volume() * 100)}%
+                    {Math.round(audioState.volume * 100)}%
                   </span>
                 </div>
               </div>

@@ -14,7 +14,7 @@ interface CommandInputProps {
 }
 
 export default function Autocomplete(props: CommandInputProps) {
-  const { selectedFile } = useAppContext();
+  const { state } = useAppContext();
   const [inputValue, setInputValue] = createSignal(props.initialValue || "");
   const [suggestions, setSuggestions] = createSignal<string[]>([]);
   const [isOpen, setIsOpen] = createSignal(false);
@@ -41,9 +41,10 @@ export default function Autocomplete(props: CommandInputProps) {
   });
 
   createEffect(() => {
-    selectedFile();
+    // @ts-expect-error Add this to force clear input
+    // when changing songs
+    const _ = state.selectedFile;
     setInputValue(props.initialValue || "");
-    // setTimeout(() => setIsOpen(false), 0);
   });
 
   // Handle keyboard navigation
