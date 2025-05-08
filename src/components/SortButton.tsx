@@ -42,7 +42,7 @@ export interface SortCriterion {
   direction: "asc" | "desc";
 }
 
-export const DEFUALT_SORT_CRITERIA: SortCriterion[] = [
+export const DEFAULT_SORT_CRITERIA: SortCriterion[] = [
   { label: "Best Match", field: "score", direction: "asc" },
   { label: "Title", field: "title", direction: "asc" },
 ];
@@ -68,6 +68,9 @@ interface SortableProps {
   children: JSX.Element;
 }
 
+// Solid-DnD stuff
+// i don't really get what's going on here
+// i just copied straight from the docs
 function Sortable(props: SortableProps) {
   const sortable = createSortable(props.item);
   const context = useDragDropContext();
@@ -104,7 +107,7 @@ export function SortDropdown(props: EnhancedSortDropdownProps) {
         }
       }
       // Default if nothing saved
-      return DEFUALT_SORT_CRITERIA;
+      return DEFAULT_SORT_CRITERIA;
     })(),
   );
 
@@ -140,7 +143,7 @@ export function SortDropdown(props: EnhancedSortDropdownProps) {
   };
 
   const handleResetCriteria = () => {
-    setSortCriteria(DEFUALT_SORT_CRITERIA);
+    setSortCriteria(DEFAULT_SORT_CRITERIA);
   };
 
   const handleCriteriaChange = (newCriteria: SortCriterion[]) => {

@@ -9,8 +9,10 @@
   -- ( ) Next/Previous file controls
   - (x) Custom thumbnail uploads
   - (x) Dark/Light theme selection
-  - ( ) Removing audio directories
-  - ( ) Persistent preferences and audio directories
+  - (x) Removing audio directories
+  - (x) Persistent preferences and audio directories
   - ( ) Resizeable UI
   - ( ) Add grouping support
   - ( ) Drag and drop support for individual files or directories
+  - ( ) Add extra editable tagging fields (comment, disc number, track number, etc.)
+  - ( ) Add toasts for errors and success events

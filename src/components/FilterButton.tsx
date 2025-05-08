@@ -22,6 +22,16 @@ export interface FilterProps {
   onChange?: (checked: boolean, index: number) => void;
 }
 
+export const DEFAULT_FILTER_FIELDS: FilterField[] = [
+  { field: "title", label: "Title", enabled: true },
+  { field: "artist", label: "Artist", enabled: false },
+  { field: "albumTitle", label: "Album", enabled: false },
+  { field: "albumArtists", label: "Album Artist", enabled: false },
+  { field: "genre", label: "Genre", enabled: false },
+  { field: "year", label: "Year", enabled: false },
+  { field: "path", label: "File Path", enabled: false },
+];
+
 export default function FilterButton(props: FilterProps) {
   return (
     <DropdownMenu placement="bottom">

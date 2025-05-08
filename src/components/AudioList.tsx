@@ -6,18 +6,15 @@ import { TextField, TextFieldRoot } from "./ui/textfield";
 import { Button } from "./ui/button";
 import { useAppContext } from "./AppContext";
 import { createVirtualizer } from "@tanstack/solid-virtual";
-import { createMemo, createSignal } from "solid-js";
+import { createMemo } from "solid-js";
 import Fuse from "fuse.js";
 import { createDebouncedSignal } from "@tanstack/solid-pacer";
-import FilterButton, { FilterField } from "./FilterButton";
-import {
-  SortDropdown as SortDropdown,
-  SortCriterion,
-  DEFUALT_SORT_CRITERIA,
-} from "./SortButton";
+import FilterButton from "./FilterButton";
+import { SortDropdown } from "./SortButton";
 import { Badge } from "./ui/badge";
 import { ThemeToggle } from "./ThemeSelector";
 import DirectoryButton from "./DirectoryButton";
+import { produce } from "solid-js/store";
 
 interface AudioListProps {
   selectedFile?: string;
@@ -69,23 +66,10 @@ export default function AudioList(props: AudioListProps) {
   const [searchQuery, setSearchQuery] = createDebouncedSignal("", {
     wait: 300,
   });
-  const { state, audioFiles } = useAppContext();
+  const { state, setState, audioFiles } = useAppContext();
 
   // Define filter fields based on AudioFile properties
-  const [filterFields, setFilterFields] = createSignal<FilterField[]>([
-    { field: "title", label: "Title", enabled: true },
-    { field: "artist", label: "Artist", enabled: false },
-    { field: "albumTitle", label: "Album", enabled: false },
-    { field: "albumArtists", label: "Album Artist", enabled: false },
-    { field: "genre", label: "Genre", enabled: false },
-    { field: "year", label: "Year", enabled: false },
-    { field: "path", label: "File Path", enabled: false },
-  ]);
-
   // Sort criteria state
-  const [sortCriteria, setSortCriteria] = createSignal<SortCriterion[]>(
-    DEFUALT_SORT_CRITERIA,
-  );
 
   // Sort options that can be added to criteria
   const sortOptions = [
@@ -100,7 +84,7 @@ export default function AudioList(props: AudioListProps) {
 
   const fuse = createMemo<Fuse<AudioFile>>(() => {
     return new Fuse(Object.values(audioFiles()), {
-      keys: filterFields()
+      keys: state.preferences.filterFields
         .filter((f) => f.enabled)
         .map((f) => f.field),
       minMatchCharLength: 1,
@@ -113,7 +97,7 @@ export default function AudioList(props: AudioListProps) {
 
   const sortFn = createMemo(() => (a: unknown, b: unknown) => {
     // Handle multi-criteria sorting
-    for (const criterion of sortCriteria()) {
+    for (const criterion of state.preferences.sortCriteria) {
       //@ts-expect-error we already check this
       const fieldA = a[criterion.field];
       //@ts-expect-error we already check this
@@ -156,7 +140,6 @@ export default function AudioList(props: AudioListProps) {
 
   createEffect(() => {
     searchQuery();
-    filterFields();
     listVirtualizer.setOptions({ ...listVirtualizer.options, enabled: false });
     listVirtualizer._willUpdate();
     listVirtualizer.setOptions({
@@ -208,23 +191,29 @@ export default function AudioList(props: AudioListProps) {
             </Show>
           </div>
           <FilterButton
-            fields={filterFields()}
-            onChange={(checked, index) =>
-              setFilterFields((prev) =>
-                prev.map((f, i) =>
-                  i === index ? { ...f, enabled: checked } : f,
-                ),
-              )
-            }
+            fields={state.preferences.filterFields}
+            onChange={(checked, index) => {
+              setState(
+                produce((s) => {
+                  s.preferences.filterFields[index].enabled = checked;
+                }),
+              );
+            }}
           />
           <SortDropdown
             sortOptions={sortOptions}
-            onChange={(newCriteria) => setSortCriteria(newCriteria)}
+            onChange={(newCriteria) =>
+              setState(
+                produce((s) => {
+                  s.preferences.sortCriteria = newCriteria;
+                }),
+              )
+            }
           />
         </div>
         <div class="flex flex-wrap items-center text-sm text-muted-foreground gap-1 mt-2">
           <span class="mr-1">Sorting by:</span>
-          <For each={sortCriteria()}>
+          <For each={state.preferences.sortCriteria}>
             {(criterion) => (
               <Badge variant="outline" class="bg-primary/5 border-primary/20">
                 {criterion.label} {criterion.direction === "asc" ? "↑" : "↓"}
@@ -239,7 +228,7 @@ export default function AudioList(props: AudioListProps) {
           <div class="flex items-center text-sm text-muted-foreground">
             <span>
               Searching in:{" "}
-              {Object.entries(filterFields())
+              {Object.entries(state.preferences.filterFields)
                 .filter(([_, enabled]) => enabled.enabled)
                 .map(([_, f]) => f.field)
                 .join(", ")}

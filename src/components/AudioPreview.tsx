@@ -19,14 +19,15 @@ import { open } from "@tauri-apps/plugin-dialog";
 import { AudioTypes, ImageTypes } from "@/types";
 import { invoke } from "@tauri-apps/api/core";
 
+
+
 export default function AudioPreview() {
-  const { state, setSelectedCover } = useAppContext();
+  const { state, setState, setSelectedCover } = useAppContext();
 
   // consolidate state into a store
   const [audioState, setAudioState] = createStore({
     isPlaying: false,
     currentTime: 0,
-    volume: 0.1,
     duration: 100,
     audioSrc: null as string | null,
   });
@@ -79,25 +80,19 @@ export default function AudioPreview() {
         produce((s) => {
           s.currentTime = 0;
           s.duration = 0;
-          s.isPlaying = false;
         }),
       );
       const src = file ? await fetchResource(file.path) : null;
       setAudioState(
         produce((s) => {
           s.audioSrc = src;
-          if (src) {
-            audioRef.pause();
-            audioRef.src = src;
-            audioRef.load();
-          }
         }),
       );
     })();
   });
 
   onMount(() => {
-    audioRef.volume = audioState.volume;
+    audioRef.volume = state.preferences.volume;
   });
 
   const handleImageSelection: JSX.EventHandler<
@@ -229,7 +224,7 @@ export default function AudioPreview() {
 
               <audio
                 ref={audioRef}
-                // src={state.audioSrc ?? undefined}
+                src={audioState.audioSrc ?? undefined}
                 preload="auto"
                 onTimeUpdate={handleTimeUpdate}
                 onLoadedMetadata={handleLoadedMetadata}
@@ -292,23 +287,23 @@ export default function AudioPreview() {
                 <div class="flex items-center gap-2 mt-2">
                   <Volume2 class="h-4 w-4 text-muted-foreground" />
                   <Slider
-                    value={[audioState.volume]}
+                    value={[state.preferences.volume]}
                     minValue={0}
                     maxValue={1}
                     step={0.01}
                     onChange={(value: number[]) => {
                       const val: number = value[0];
                       audioRef.volume = val;
-                      setAudioState(
+                      setState(
                         produce((s) => {
-                          s.volume = val;
+                          s.preferences.volume = val;
                         }),
                       );
                     }}
                     class="w-24 mr-1"
                   />
                   <span class="text-xs text-muted-foreground w-8">
-                    {Math.round(audioState.volume * 100)}%
+                    {Math.round(state.preferences.volume * 100)}%
                   </span>
                 </div>
               </div>

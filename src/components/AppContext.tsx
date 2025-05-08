@@ -1,4 +1,3 @@
-// src/AppContext.tsx
 import {
   createContext,
   useContext,
@@ -8,11 +7,13 @@ import {
   createMemo,
   Accessor,
 } from "solid-js";
-import { createStore, produce } from "solid-js/store";
+import { createStore, produce, SetStoreFunction } from "solid-js/store";
 import { AudioFile, CoverData } from "@/types";
 import { open } from "@tauri-apps/plugin-dialog";
 import { Channel, invoke } from "@tauri-apps/api/core";
 import { convertBase64ToBlob } from "@/utils";
+import { DEFAULT_FILTER_FIELDS, FilterField } from "./FilterButton";
+import { DEFAULT_SORT_CRITERIA, SortCriterion } from "./SortButton";
 
 interface AppContextValue {
   audioFiles: Accessor<Record<string, AudioFile>>;
@@ -22,7 +23,26 @@ interface AppContextValue {
   setSelectedFile: (file: string | null) => void;
   addAudioDirectory: (directory?: string) => Promise<void>;
   removeAudioDirectory: (directory: string) => void;
+  setState: SetStoreFunction<AppState>;
 }
+
+interface Preferences {
+  filterFields: FilterField[];
+  sortCriteria: SortCriterion[];
+  volume: number;
+  showExtraTagFields: boolean;
+}
+
+interface StoredPreferences extends Preferences {
+  audioDirectories?: string[];
+}
+
+const DEFAULT_PREFERENCES: Preferences = {
+  filterFields: DEFAULT_FILTER_FIELDS,
+  sortCriteria: DEFAULT_SORT_CRITERIA,
+  volume: 0.1,
+  showExtraTagFields: false,
+};
 
 type Result<T, E = unknown> = { Ok: T; Err: null } | { Ok: null; Err: E };
 type LoadAudioDirValue =
@@ -36,6 +56,7 @@ interface AppState {
   selectedAudioFile: AudioFile | null;
   audioDirectories: Record<string, AudioDirectoryValue>;
   selectedCover: CoverData | null | undefined;
+  preferences: Preferences;
 }
 
 interface AudioDirectoryValue {
@@ -51,6 +72,7 @@ export function AppProvider(props: { children: JSX.Element }) {
     selectedAudioFile: null,
     audioDirectories: {},
     selectedCover: undefined,
+    preferences: DEFAULT_PREFERENCES,
   });
 
   // derive audioFiles: only those paths tracked in directories
@@ -69,10 +91,21 @@ export function AppProvider(props: { children: JSX.Element }) {
   // on init, rehydrate list of directories from localStorage
   onMount(async () => {
     try {
-      const raw = localStorage.getItem("audioDirectories");
-      if (!raw) return;
-      const dirs: string[] = JSON.parse(raw);
-      for (const dir of dirs) {
+      const preferencesRaw = localStorage.getItem("preferences");
+      if (!preferencesRaw) return;
+      const preferences: StoredPreferences = {
+        ...DEFAULT_PREFERENCES,
+        ...JSON.parse(preferencesRaw),
+      };
+      const audioDirs = preferences.audioDirectories || [];
+      delete preferences.audioDirectories;
+      // Fallback to default preferences if parsing any fields fail
+      setState(
+        produce((s) => {
+          s.preferences = preferences;
+        }),
+      );
+      for (const dir of audioDirs) {
         await addAudioDirectory(dir);
       }
     } catch (e) {
@@ -80,12 +113,13 @@ export function AppProvider(props: { children: JSX.Element }) {
     }
   });
 
-  // persist only the *keys* (the directory paths)
+  // Update the user's preferences whenever the preferences change
   createEffect(() => {
-    localStorage.setItem(
-      "audioDirectories",
-      JSON.stringify(Object.keys(state.audioDirectories)),
-    );
+    const preferences: StoredPreferences = {
+      ...state.preferences,
+      audioDirectories: Object.keys(state.audioDirectories),
+    };
+    localStorage.setItem("preferences", JSON.stringify(preferences));
   });
 
   // when you pick a file, clear cover and update the selected AudioFile
@@ -207,6 +241,7 @@ export function AppProvider(props: { children: JSX.Element }) {
   const contextValue: AppContextValue = {
     audioFiles: audioFilesMemo,
     state,
+    setState,
     setSelectedCover,
     setAudioFile,
     setSelectedFile,
