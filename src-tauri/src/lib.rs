@@ -1,5 +1,5 @@
 use std::{
-    fs::self,
+    fs,
     io::ErrorKind,
     path::{Path, PathBuf},
 };
@@ -60,47 +60,57 @@ macro_rules! cont {
     };
 }
 
-#[tauri::command(rename_all = "camelCase", async)]
-fn load_audio_dir(directory: &Path, on_file_processed: Channel<Result<AudioFile>>) -> Result<()> {
-    for entry in WalkDir::new(directory).follow_links(true) {
-        let entry = match entry {
-            Ok(k) => k,
-            Err(e)
-                if e.io_error()
-                    .is_some_and(|e| e.kind() == ErrorKind::NotFound) =>
-            {
-                continue;
-            }
-            Err(e) => {
-                on_file_processed.send(Err(e.into()))?;
-                continue;
-            }
-        };
-        let tags: Box<dyn AudioTag> = cont!(Tag::new().read_from_path(entry.path()));
-        on_file_processed.send(Ok(AudioFile {
-            path: entry.path().into(),
-            title: tags.title().map(|t| t.into()),
-            artist: tags.artist().map(|t| t.into()),
-            cover: tags.album_cover().and_then(|cover| {
-                let data = general_purpose::STANDARD.encode(cover.data);
-                if data == "AA==" {
-                    return None;
-                };
-                Some(format!(
-                    "data:{};base64,{}",
-                    Into::<&'static str>::into(cover.mime_type),
-                    data
-                ))
-            }),
-            album_title: tags.album_title().map(|t| t.into()),
-            album_artists: tags
-                .album_artists()
-                .map(|t| t.iter().map(|&a| a.into()).collect()),
-            year: tags.year(),
-            genre: tags.genre().map(|t| t.into()),
-        }))?;
-    }
-    Ok(())
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase", tag = "type", content = "content")]
+enum LoadAudioDirValue {
+    Finshed,
+    AudioFile(Result<AudioFile>),
+}
+
+#[tauri::command(rename_all = "camelCase")]
+fn load_audio_dir(directory: PathBuf, on_file_processed: Channel<LoadAudioDirValue>) {
+    // Spawn a thread to process the files in the directory and prevent blocking the main thread
+    std::thread::spawn(move || {
+        for entry in WalkDir::new(directory).follow_links(true) {
+            let entry = match entry {
+                Ok(k) => k,
+                Err(e)
+                    if e.io_error()
+                        .is_some_and(|e| e.kind() == ErrorKind::NotFound) =>
+                {
+                    continue;
+                }
+                Err(e) => {
+                    let _ = on_file_processed.send(LoadAudioDirValue::AudioFile(Err(e.into())));
+                    continue;
+                }
+            };
+            let tags: Box<dyn AudioTag> = cont!(Tag::new().read_from_path(entry.path()));
+            let _ = on_file_processed.send(LoadAudioDirValue::AudioFile(Ok(AudioFile {
+                path: entry.path().into(),
+                title: tags.title().map(|t| t.into()),
+                artist: tags.artist().map(|t| t.into()),
+                cover: tags.album_cover().and_then(|cover| {
+                    let data = general_purpose::STANDARD.encode(cover.data);
+                    if data == "AA==" {
+                        return None;
+                    };
+                    Some(format!(
+                        "data:{};base64,{}",
+                        Into::<&'static str>::into(cover.mime_type),
+                        data
+                    ))
+                }),
+                album_title: tags.album_title().map(|t| t.into()),
+                album_artists: tags
+                    .album_artists()
+                    .map(|t| t.iter().map(|&a| a.into()).collect()),
+                year: tags.year(),
+                genre: tags.genre().map(|t| t.into()),
+            })));
+        }
+        let _ = on_file_processed.send(LoadAudioDirValue::Finshed);
+    });
 }
 
 #[tauri::command(rename_all = "camelCase", async)]

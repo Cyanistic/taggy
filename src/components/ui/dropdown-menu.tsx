@@ -78,6 +78,7 @@ export const DropdownMenuItem = <T extends ValidComponent = "div">(
         local.inset && "pl-8",
         local.class,
       )}
+      closeOnSelect={false}
       {...rest}
     />
   );

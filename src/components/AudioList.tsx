@@ -69,7 +69,7 @@ export default function AudioList(props: AudioListProps) {
   const [searchQuery, setSearchQuery] = createDebouncedSignal("", {
     wait: 300,
   });
-  const { state } = useAppContext();
+  const { state, audioFiles } = useAppContext();
 
   // Define filter fields based on AudioFile properties
   const [filterFields, setFilterFields] = createSignal<FilterField[]>([
@@ -99,7 +99,7 @@ export default function AudioList(props: AudioListProps) {
   ];
 
   const fuse = createMemo<Fuse<AudioFile>>(() => {
-    return new Fuse(Object.values(state.audioFiles), {
+    return new Fuse(Object.values(audioFiles()), {
       keys: filterFields()
         .filter((f) => f.enabled)
         .map((f) => f.field),
@@ -132,13 +132,13 @@ export default function AudioList(props: AudioListProps) {
   });
 
   // 2) Reactive filtered + sorted files
-  const filteredFiles = createMemo(() => {
+  const filteredFiles = createMemo<(AudioFile & { score?: number })[]>(() => {
     const q = searchQuery();
     const list = q
       ? fuse()
           .search(q)
           .map((r) => ({ ...r.item, score: r.score }))
-      : Object.values(state.audioFiles);
+      : Object.values(audioFiles());
     list.sort(sortFn());
     return list;
   });

@@ -15,7 +15,7 @@ import { display, getData } from "@/utils";
 import { TagInput } from "./TagInput";
 
 export default function TagEditor() {
-  const { state, setAudioFile, setSelectedCover } = useAppContext();
+  const { state, audioFiles, setAudioFile, setSelectedCover } = useAppContext();
   const [formData, setFormData] = createSignal(state.selectedAudioFile!);
 
   const handleReset = () => {
@@ -23,21 +23,21 @@ export default function TagEditor() {
   };
 
   const allArtists = createMemo(() =>
-    Object.values(state.audioFiles)
+    Object.values(audioFiles())
       .filter((file) => file.artist)
       .map((file) => file.artist!)
       .filter((artist, index, self) => self.indexOf(artist) === index),
   );
 
   const allAlbums = createMemo(() =>
-    Object.values(state.audioFiles)
+    Object.values(audioFiles())
       .filter((file) => file.albumTitle)
       .map((file) => file.albumTitle!)
       .filter((album, index, self) => self.indexOf(album) === index),
   );
 
   const allGenres = createMemo(() =>
-    Object.values(state.audioFiles)
+    Object.values(audioFiles())
       .filter((file) => file.genre)
       .map((file) => file.genre!)
       .filter((genre, index, self) => self.indexOf(genre) === index),
