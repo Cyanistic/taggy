@@ -5,7 +5,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Save, X } from "lucide-solid";
+import { ChevronDown, ChevronUp, Save, X } from "lucide-solid";
 import { Button } from "./ui/button";
 import { TextField, TextFieldLabel, TextFieldRoot } from "./ui/textfield";
 import { createEffect, createMemo, createSignal, JSX, Show } from "solid-js";
@@ -13,9 +13,13 @@ import { useAppContext } from "./AppContext";
 import { invoke } from "@tauri-apps/api/core";
 import { display, getData } from "@/utils";
 import { TagInput } from "./TagInput";
+import { produce } from "solid-js/store";
+import { TextArea } from "./ui/textarea";
+import { NumericPairInput } from "./NumericPairInput";
 
 export default function TagEditor() {
-  const { state, audioFiles, setAudioFile, setSelectedCover } = useAppContext();
+  const { state, audioFiles, setState, setAudioFile, setSelectedCover } =
+    useAppContext();
   const [formData, setFormData] = createSignal(state.selectedAudioFile!);
 
   const handleReset = () => {
@@ -44,6 +48,7 @@ export default function TagEditor() {
   );
 
   createEffect(() => {
+    console.log(state.selectedAudioFile?.date);
     handleReset();
   });
 
@@ -72,6 +77,14 @@ export default function TagEditor() {
     } catch (e) {
       console.error(e);
     }
+  };
+
+  const toggleShowTags = () => {
+    setState(
+      produce((s) => {
+        s.preferences.showExtraTagFields = !s.preferences.showExtraTagFields;
+      }),
+    );
   };
 
   return (
@@ -177,6 +190,119 @@ export default function TagEditor() {
             </TextFieldRoot>
           </div>
         </div>
+        <Show
+          when={state.preferences.showExtraTagFields}
+          fallback={
+            <div class="flex justify-center">
+              <Button
+                variant="outline"
+                onClick={toggleShowTags}
+                class="w-full sm:w-auto border-primary/20 hover:bg-primary/10 hover:text-primary"
+              >
+                <ChevronUp class="h-4 w-4 mr-2" />
+                Show less tags
+              </Button>
+            </div>
+          }
+        >
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2 mt-2 border-t border-border animate-in fade-in-50 duration-300">
+            <div class="space-y-2">
+              <TextFieldRoot>
+                <TextFieldLabel class="text-primary/90">
+                  Composer
+                </TextFieldLabel>
+                <TagInput
+                  input={formData().composer ?? ""}
+                  placeholder={state.selectedAudioFile?.composer ?? ""}
+                  onChange={(value) => {
+                    setFormData((prev) => ({
+                      ...prev,
+                      composer: value,
+                    }));
+                  }}
+                  suggestions={allArtists()}
+                />
+              </TextFieldRoot>
+            </div>
+
+            <div class="space-y-2">
+              <TextFieldRoot>
+                <TextFieldLabel class="text-primary/90">Date</TextFieldLabel>
+                <TextField
+                  id="date"
+                  name="date"
+                  value={formData().date || ""}
+                  onInput={handleInputInput}
+                  type="date"
+                />
+              </TextFieldRoot>
+            </div>
+
+            <div class="space-y-2">
+              <TextFieldRoot>
+                <TextFieldLabel class="text-primary/90">
+                  Disc Number / Total Discs
+                </TextFieldLabel>
+                <NumericPairInput
+                  firstLabel="Disc Number"
+                  secondLabel="Total Discs"
+                  firstValue={formData().discNumber}
+                  secondValue={formData().totalDiscs}
+                  onFirstChange={(val) =>
+                    setFormData((prev) => ({ ...prev, discNumber: val }))
+                  }
+                  onSecondChange={(val) =>
+                    setFormData((prev) => ({ ...prev, totalDiscs: val }))
+                  }
+                />
+              </TextFieldRoot>
+            </div>
+
+            <div class="space-y-2">
+              <TextFieldRoot>
+                <TextFieldLabel class="text-primary/90">
+                  Track Number / Total Tracks
+                </TextFieldLabel>
+                <NumericPairInput
+                  firstLabel="Track Number"
+                  secondLabel="Total Tracks"
+                  firstValue={formData().trackNumber}
+                  secondValue={formData().totalTracks}
+                  onFirstChange={(val) =>
+                    setFormData((prev) => ({ ...prev, trackNumber: val }))
+                  }
+                  onSecondChange={(val) =>
+                    setFormData((prev) => ({ ...prev, totalTracks: val }))
+                  }
+                />
+              </TextFieldRoot>
+            </div>
+
+            <div class="space-y-2 md:col-span-2">
+              <TextFieldRoot>
+                <TextFieldLabel class="text-primary/90">Comment</TextFieldLabel>
+                <TextArea
+                  id="comment"
+                  name="comment"
+                  value={formData().comment || ""}
+                  onInput={handleInputInput}
+                  rows={3}
+                  class="resize-none"
+                />
+              </TextFieldRoot>
+            </div>
+          </div>
+          <div class="flex justify-center">
+            <Button
+              variant="outline"
+              onClick={toggleShowTags}
+              class="w-full sm:w-auto border-primary/20 hover:bg-primary/10 hover:text-primary"
+            >
+              <ChevronDown class="h-4 w-4 mr-2" />
+              Show all tags
+            </Button>
+          </div>
+        </Show>
       </CardContent>
       <CardFooter>
         <Show

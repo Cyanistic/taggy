@@ -7,7 +7,9 @@ use std::{
 use audiotags::{AudioTag, MimeType, Picture, Tag};
 use base64::{Engine, engine::general_purpose};
 use error::AppError;
+use id3::Timestamp;
 use serde::{Deserialize, Serialize};
+use serde_nested_with::serde_nested;
 use tauri::ipc::Channel;
 use walkdir::WalkDir;
 
@@ -30,6 +32,26 @@ pub fn run() {
         .expect("error while running tauri application");
 }
 
+// Serde calls this the definition of the remote type. It is just a copy of the
+// remote data structure. The `remote` attribute gives the path to the actual
+// type we intend to derive code for.
+#[derive(Serialize, Deserialize)]
+#[serde(remote = "Timestamp")]
+struct TimestampDef {
+    pub year: i32,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub month: Option<u8>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub day: Option<u8>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub hour: Option<u8>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub minute: Option<u8>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub second: Option<u8>,
+}
+
+#[serde_nested]
 #[derive(Serialize, Deserialize, Debug)]
 #[serde(rename_all = "camelCase")]
 pub struct AudioFile {
@@ -48,6 +70,21 @@ pub struct AudioFile {
     year: Option<i32>,
     #[serde(skip_serializing_if = "Option::is_none")]
     genre: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    comment: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    total_discs: Option<u16>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    total_tracks: Option<u16>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    disc_number: Option<u16>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    track_number: Option<u16>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    composer: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde_nested(sub = "Timestamp", serde(with = "TimestampDef"))]
+    date: Option<Timestamp>,
 }
 
 /// Conitnue macro to handle errors in a more concise way.
@@ -107,6 +144,13 @@ fn load_audio_dir(directory: PathBuf, on_file_processed: Channel<LoadAudioDirVal
                     .map(|t| t.iter().map(|&a| a.into()).collect()),
                 year: tags.year(),
                 genre: tags.genre().map(|t| t.into()),
+                composer: tags.composer().map(|t| t.into()),
+                comment: tags.comment().map(|t| t.into()),
+                total_discs: tags.total_discs(),
+                total_tracks: tags.total_tracks(),
+                disc_number: tags.disc_number(),
+                track_number: tags.track_number(),
+                date: tags.date(),
             })));
         }
         let _ = on_file_processed.send(LoadAudioDirValue::Finshed);
@@ -157,6 +201,30 @@ fn save_audio_tags(tags: AudioFile, remove_cover: bool) -> Result<()> {
     match tags.year {
         Some(year) => new_tags.set_year(year),
         None => new_tags.remove_year(),
+    }
+    match tags.disc_number {
+        Some(disc_number) => new_tags.set_disc_number(disc_number),
+        None => new_tags.remove_disc_number(),
+    }
+    match tags.total_discs {
+        Some(total_discs) => new_tags.set_total_discs(total_discs),
+        None => new_tags.remove_total_discs(),
+    }
+    match tags.track_number {
+        Some(track_number) => new_tags.set_track_number(track_number),
+        None => new_tags.remove_track_number(),
+    }
+    match tags.total_tracks {
+        Some(total_tracks) => new_tags.set_total_tracks(total_tracks),
+        None => new_tags.remove_total_tracks(),
+    }
+    match tags.composer {
+        Some(composer) => new_tags.set_composer(composer),
+        None => new_tags.remove_composer(),
+    }
+    match tags.comment {
+        Some(comment) => new_tags.set_comment(comment),
+        None => new_tags.remove_comment(),
     }
     if remove_cover {
         new_tags.remove_album_cover();

@@ -22,7 +22,7 @@ export function TagInput(props: TagInputProps) {
   // Filter suggestions to exclude already selected artists
   const filteredSuggestions = createMemo(() =>
     uniqueArtists()
-      //@ts-expect-error difference between string and string[]
+      // @ts-expect-error difference between string and string[]
       .difference(new Set(props.input)),
   );
 

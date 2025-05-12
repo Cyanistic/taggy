@@ -14,5 +14,5 @@
   - ( ) Resizeable UI
   - ( ) Add grouping support
   - ( ) Drag and drop support for individual files or directories
-  - ( ) Add extra editable tagging fields (comment, disc number, track number, etc.)
+  - (x) Add extra editable tagging fields (comment, disc number, track number, etc.)
   - ( ) Add toasts for errors and success events

@@ -538,8 +538,10 @@ checksum = "c469d952047f47f91b68d1cba3f10d63c11d73e4636f24f08daf0278abf01c4d"
 dependencies = [
  "android-tzdata",
  "iana-time-zone",
+ "js-sys",
  "num-traits",
  "serde",
+ "wasm-bindgen",
  "windows-link",
 ]
 
@@ -3388,6 +3390,18 @@ dependencies = [
 ]
 
 [[package]]
+name = "serde_nested_with"
+version = "0.2.5"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "a2e5de5df86900414dd5f677bcf85486948fdb36c84d4aad54434b9bcdd2d574"
+dependencies = [
+ "darling",
+ "proc-macro-error",
+ "quote",
+ "syn 2.0.101",
+]
+
+[[package]]
 name = "serde_repr"
 version = "0.1.20"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3731,10 +3745,13 @@ version = "0.1.0"
 dependencies = [
  "audiotags",
  "base64 0.22.1",
+ "chrono",
  "color-eyre",
+ "id3",
  "mime_guess",
  "serde",
  "serde_json",
+ "serde_nested_with",
  "tauri",
  "tauri-build",
  "tauri-plugin-dialog",

@@ -32,3 +32,6 @@ walkdir = "2.5.0"
 base64 = "0.22.1"
 mime_guess = "2.0.5"
 tauri-plugin-os = "2"
+chrono = { version = "0.4.41", features = ["serde"] }
+id3 = "1.16.2"
+serde_nested_with = "0.2.5"

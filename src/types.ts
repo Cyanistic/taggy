@@ -7,6 +7,14 @@ export interface AudioFile {
   albumArtists?: string[];
   year?: number;
   genre?: string;
+  // Extra fields
+  trackNumber?: number;
+  discNumber?: number;
+  totalTracks?: number;
+  totalDiscs?: number;
+  comment?: string;
+  composer?: string;
+  date?: string;
 }
 
 export type CoverData =
