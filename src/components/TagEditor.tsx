@@ -7,12 +7,7 @@ import {
 } from "@/components/ui/card";
 import { ChevronDown, ChevronUp, Save, X } from "lucide-solid";
 import { Button } from "./ui/button";
-import {
-  TextField,
-  TextFieldErrorMessage,
-  TextFieldLabel,
-  TextFieldRoot,
-} from "./ui/textfield";
+import { TextField, TextFieldLabel, TextFieldRoot } from "./ui/textfield";
 import { createEffect, createMemo, createSignal, JSX, Show } from "solid-js";
 import { useAppContext } from "./AppContext";
 import { invoke } from "@tauri-apps/api/core";
@@ -100,178 +95,25 @@ export default function TagEditor() {
   };
 
   return (
-    <Card>
+    <Card class="h-full flex flex-col flex-1 min-h-0">
       <CardHeader>
         <CardTitle class="text-primary">Edit Tags</CardTitle>
       </CardHeader>
-      <CardContent class="space-y-4">
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div class="space-y-2">
-            <TextFieldRoot>
-              <TextFieldLabel class="text-primary/90 font-bold">
-                Title
-              </TextFieldLabel>
-              <TextField
-                id="title"
-                name="title"
-                value={formData().title || ""}
-                placeholder={state.selectedAudioFile?.title}
-                onInput={handleInputInput}
-                type="text"
-              />
-            </TextFieldRoot>
-          </div>
-
-          <div class="space-y-2">
-            <TextFieldRoot>
-              <TextFieldLabel class="text-primary/90 font-bold">
-                Artist
-              </TextFieldLabel>
-              <TagInput
-                input={formData().artist ?? ""}
-                placeholder={state.selectedAudioFile?.artist ?? ""}
-                onChange={(value) => {
-                  setFormData((prev) => ({
-                    ...prev,
-                    artist: value,
-                  }));
-                }}
-                suggestions={allArtists()}
-              />
-            </TextFieldRoot>
-          </div>
-
-          <div class="space-y-2">
-            <TextFieldRoot>
-              <TextFieldLabel class="text-primary/90 font-bold">
-                Album
-              </TextFieldLabel>
-              <TagInput
-                input={formData().albumTitle ?? ""}
-                placeholder={state.selectedAudioFile?.albumTitle ?? ""}
-                onChange={(value) => {
-                  setFormData((prev) => ({
-                    ...prev,
-                    albumTitle: value,
-                  }));
-                }}
-                suggestions={allAlbums()}
-              />
-            </TextFieldRoot>
-          </div>
-
-          <div class="space-y-2">
-            <TextFieldRoot>
-              <TextFieldLabel class="text-primary/90 font-bold">
-                Album Artist
-              </TextFieldLabel>
-              <TagInput
-                input={formData().albumArtists ?? []}
-                placeholder="Search artists..."
-                onSelect={(value) => {
-                  setFormData((prev) => ({
-                    ...prev,
-                    albumArtists: Array.isArray(value) ? value : [value],
-                  }));
-                }}
-                suggestions={allArtists()}
-              />
-            </TextFieldRoot>
-          </div>
-          <div class="space-y-2">
-            <TextFieldRoot
-              validationState={formError().date ? "invalid" : "valid"}
-            >
-              <TextFieldLabel class="text-primary/90 font-bold">
-                Date
-              </TextFieldLabel>
-              <TextField
-                id="date"
-                name="date"
-                placeholder={
-                  state.selectedAudioFile?.date
-                    ? formatDateTime(state.selectedAudioFile.date!)
-                    : "YYYY/MM/dd@hh:mm:ss"
-                }
-                value={formData().date ? formatDateTime(formData().date!) : ""}
-                onInput={(e) => {
-                  const input = e.currentTarget.value;
-                  try {
-                    setFormData((prev) => ({
-                      ...prev,
-                      date: input ? parseDateTime(input) : null,
-                    }));
-                    setFormError((prev) => ({
-                      ...prev,
-                      date: undefined,
-                    }));
-                  } catch (e) {
-                    setFormError((prev) => ({
-                      ...prev,
-                      date: (e as Error).message,
-                    }));
-                    console.error(e);
-                  }
-                }}
-                type="text"
-              />
-              <div class="h-4 text-xs text-destructive font-extrabold">
-                {formError().date}
-              </div>
-            </TextFieldRoot>
-          </div>
-
-          <div class="space-y-2">
-            <TextFieldRoot>
-              <TextFieldLabel class="text-primary/90 font-bold">
-                Genre
-              </TextFieldLabel>
-              <TagInput
-                input={formData().genre ?? ""}
-                placeholder={state.selectedAudioFile?.genre ?? ""}
-                onChange={(value) => {
-                  setFormData((prev) => ({
-                    ...prev,
-                    genre: value,
-                  }));
-                }}
-                suggestions={allGenres()}
-              />
-            </TextFieldRoot>
-          </div>
-        </div>
-        <Show
-          when={state.preferences.showExtraTagFields}
-          fallback={
-            <div class="flex justify-center">
-              <Button
-                variant="outline"
-                onClick={toggleShowTags}
-                class="w-full sm:w-auto border-primary/20 hover:bg-primary/10 hover:text-primary"
-              >
-                <ChevronUp class="h-4 w-4 mr-2" />
-                Show less tags
-              </Button>
-            </div>
-          }
-        >
-          <div class="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2 mt-2 border-t border-border animate-in fade-in-50 duration-300">
+      <div class="overflow-auto flex-1">
+        <CardContent class="space-y-4">
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div class="space-y-2">
               <TextFieldRoot>
                 <TextFieldLabel class="text-primary/90 font-bold">
-                  Track Number / Total Tracks
+                  Title
                 </TextFieldLabel>
-                <NumericPairInput
-                  firstLabel="Track Number"
-                  secondLabel="Total Tracks"
-                  firstValue={formData().trackNumber}
-                  secondValue={formData().totalTracks}
-                  onFirstChange={(val) =>
-                    setFormData((prev) => ({ ...prev, trackNumber: val }))
-                  }
-                  onSecondChange={(val) =>
-                    setFormData((prev) => ({ ...prev, totalTracks: val }))
-                  }
+                <TextField
+                  id="title"
+                  name="title"
+                  value={formData().title || ""}
+                  placeholder={state.selectedAudioFile?.title}
+                  onInput={handleInputInput}
+                  type="text"
                 />
               </TextFieldRoot>
             </div>
@@ -279,35 +121,15 @@ export default function TagEditor() {
             <div class="space-y-2">
               <TextFieldRoot>
                 <TextFieldLabel class="text-primary/90 font-bold">
-                  Disc Number / Total Discs
-                </TextFieldLabel>
-                <NumericPairInput
-                  firstLabel="Disc Number"
-                  secondLabel="Total Discs"
-                  firstValue={formData().discNumber}
-                  secondValue={formData().totalDiscs}
-                  onFirstChange={(val) =>
-                    setFormData((prev) => ({ ...prev, discNumber: val }))
-                  }
-                  onSecondChange={(val) =>
-                    setFormData((prev) => ({ ...prev, totalDiscs: val }))
-                  }
-                />
-              </TextFieldRoot>
-            </div>
-
-            <div class="space-y-2">
-              <TextFieldRoot>
-                <TextFieldLabel class="text-primary/90 font-bold">
-                  Composer
+                  Artist
                 </TextFieldLabel>
                 <TagInput
-                  input={formData().composer ?? ""}
-                  placeholder={state.selectedAudioFile?.composer ?? ""}
+                  input={formData().artist ?? ""}
+                  placeholder={state.selectedAudioFile?.artist ?? ""}
                   onChange={(value) => {
                     setFormData((prev) => ({
                       ...prev,
-                      composer: value,
+                      artist: value,
                     }));
                   }}
                   suggestions={allArtists()}
@@ -318,32 +140,209 @@ export default function TagEditor() {
             <div class="space-y-2">
               <TextFieldRoot>
                 <TextFieldLabel class="text-primary/90 font-bold">
-                  Comment
+                  Album
                 </TextFieldLabel>
-                <TextArea
-                  id="comment"
-                  name="comment"
-                  value={formData().comment || ""}
-                  onInput={handleInputInput}
-                  rows={3}
-                  class="resize-none"
+                <TagInput
+                  input={formData().albumTitle ?? ""}
+                  placeholder={state.selectedAudioFile?.albumTitle ?? ""}
+                  onChange={(value) => {
+                    setFormData((prev) => ({
+                      ...prev,
+                      albumTitle: value,
+                    }));
+                  }}
+                  suggestions={allAlbums()}
+                />
+              </TextFieldRoot>
+            </div>
+
+            <div class="space-y-2">
+              <TextFieldRoot>
+                <TextFieldLabel class="text-primary/90 font-bold">
+                  Album Artist
+                </TextFieldLabel>
+                <TagInput
+                  input={formData().albumArtists ?? []}
+                  placeholder="Search artists..."
+                  onSelect={(value) => {
+                    setFormData((prev) => ({
+                      ...prev,
+                      albumArtists: Array.isArray(value) ? value : [value],
+                    }));
+                  }}
+                  suggestions={allArtists()}
+                />
+              </TextFieldRoot>
+            </div>
+            <div class="space-y-2">
+              <TextFieldRoot
+                validationState={formError().date ? "invalid" : "valid"}
+              >
+                <TextFieldLabel class="text-primary/90 font-bold">
+                  Date
+                </TextFieldLabel>
+                <TextField
+                  id="date"
+                  name="date"
+                  placeholder={
+                    state.selectedAudioFile?.date
+                      ? formatDateTime(state.selectedAudioFile.date!)
+                      : "YYYY/MM/dd@hh:mm:ss"
+                  }
+                  value={
+                    formData().date ? formatDateTime(formData().date!) : ""
+                  }
+                  onInput={(e) => {
+                    const input = e.currentTarget.value;
+                    try {
+                      setFormData((prev) => ({
+                        ...prev,
+                        date: input ? parseDateTime(input) : null,
+                      }));
+                      setFormError((prev) => ({
+                        ...prev,
+                        date: undefined,
+                      }));
+                    } catch (e) {
+                      setFormError((prev) => ({
+                        ...prev,
+                        date: (e as Error).message,
+                      }));
+                      console.error(e);
+                    }
+                  }}
+                  type="text"
+                />
+                <div class="h-4 text-xs text-destructive font-extrabold">
+                  {formError().date}
+                </div>
+              </TextFieldRoot>
+            </div>
+
+            <div class="space-y-2">
+              <TextFieldRoot>
+                <TextFieldLabel class="text-primary/90 font-bold">
+                  Genre
+                </TextFieldLabel>
+                <TagInput
+                  input={formData().genre ?? ""}
+                  placeholder={state.selectedAudioFile?.genre ?? ""}
+                  onChange={(value) => {
+                    setFormData((prev) => ({
+                      ...prev,
+                      genre: value,
+                    }));
+                  }}
+                  suggestions={allGenres()}
                 />
               </TextFieldRoot>
             </div>
           </div>
-          <div class="flex justify-center">
-            <Button
-              variant="outline"
-              onClick={toggleShowTags}
-              class="w-full sm:w-auto border-primary/20 hover:bg-primary/10 hover:text-primary"
-            >
-              <ChevronDown class="h-4 w-4 mr-2" />
-              Show all tags
-            </Button>
-          </div>
-        </Show>
-      </CardContent>
-      <CardFooter>
+          <Show
+            when={state.preferences.showExtraTagFields}
+            fallback={
+              <div class="flex justify-center">
+                <Button
+                  variant="outline"
+                  onClick={toggleShowTags}
+                  class="w-full sm:w-auto border-primary/20 hover:bg-primary/10 hover:text-primary"
+                >
+                  <ChevronUp class="h-4 w-4 mr-2" />
+                  Show less tags
+                </Button>
+              </div>
+            }
+          >
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2 mt-2 border-t border-border animate-in fade-in-50 duration-300">
+              <div class="space-y-2">
+                <TextFieldRoot>
+                  <TextFieldLabel class="text-primary/90 font-bold">
+                    Track Number / Total Tracks
+                  </TextFieldLabel>
+                  <NumericPairInput
+                    firstLabel="Track Number"
+                    secondLabel="Total Tracks"
+                    firstValue={formData().trackNumber}
+                    secondValue={formData().totalTracks}
+                    onFirstChange={(val) =>
+                      setFormData((prev) => ({ ...prev, trackNumber: val }))
+                    }
+                    onSecondChange={(val) =>
+                      setFormData((prev) => ({ ...prev, totalTracks: val }))
+                    }
+                  />
+                </TextFieldRoot>
+              </div>
+
+              <div class="space-y-2">
+                <TextFieldRoot>
+                  <TextFieldLabel class="text-primary/90 font-bold">
+                    Disc Number / Total Discs
+                  </TextFieldLabel>
+                  <NumericPairInput
+                    firstLabel="Disc Number"
+                    secondLabel="Total Discs"
+                    firstValue={formData().discNumber}
+                    secondValue={formData().totalDiscs}
+                    onFirstChange={(val) =>
+                      setFormData((prev) => ({ ...prev, discNumber: val }))
+                    }
+                    onSecondChange={(val) =>
+                      setFormData((prev) => ({ ...prev, totalDiscs: val }))
+                    }
+                  />
+                </TextFieldRoot>
+              </div>
+
+              <div class="space-y-2">
+                <TextFieldRoot>
+                  <TextFieldLabel class="text-primary/90 font-bold">
+                    Composer
+                  </TextFieldLabel>
+                  <TagInput
+                    input={formData().composer ?? ""}
+                    placeholder={state.selectedAudioFile?.composer ?? ""}
+                    onChange={(value) => {
+                      setFormData((prev) => ({
+                        ...prev,
+                        composer: value,
+                      }));
+                    }}
+                    suggestions={allArtists()}
+                  />
+                </TextFieldRoot>
+              </div>
+
+              <div class="space-y-2">
+                <TextFieldRoot>
+                  <TextFieldLabel class="text-primary/90 font-bold">
+                    Comment
+                  </TextFieldLabel>
+                  <TextArea
+                    id="comment"
+                    name="comment"
+                    value={formData().comment || ""}
+                    onInput={handleInputInput}
+                    rows={3}
+                    class="resize-none"
+                  />
+                </TextFieldRoot>
+              </div>
+            </div>
+            <div class="flex justify-center">
+              <Button
+                variant="outline"
+                onClick={toggleShowTags}
+                class="w-full sm:w-auto border-primary/20 hover:bg-primary/10 hover:text-primary"
+              >
+                <ChevronDown class="h-4 w-4 mr-2" />
+                Show all tags
+              </Button>
+            </div>
+          </Show>
+        </CardContent>
+      </div>
+      <CardFooter class="py-2">
         <Show
           when={
             // Only show the save changes button if there are changes to be saved

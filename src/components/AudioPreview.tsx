@@ -19,8 +19,6 @@ import { open } from "@tauri-apps/plugin-dialog";
 import { AudioTypes, ImageTypes } from "@/types";
 import { invoke } from "@tauri-apps/api/core";
 
-
-
 export default function AudioPreview() {
   const { state, setState, setSelectedCover } = useAppContext();
 
@@ -135,7 +133,7 @@ export default function AudioPreview() {
   };
 
   return (
-    <Card class="mb-6">
+    <Card class="mb-6 flex-shrink-0">
       <Show when={state.selectedAudioFile}>
         {(file) => (
           <CardContent class="p-6">

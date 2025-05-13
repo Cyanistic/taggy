@@ -3,6 +3,7 @@ import { Card, CardContent } from "./ui/card";
 import { Music } from "lucide-solid";
 import { ComponentProps, Show, splitProps } from "solid-js";
 import { cn } from "@/libs/cn";
+import { useAppContext } from "./AppContext";
 
 export interface AudioRowProps extends ComponentProps<"div"> {
   file: AudioFile;
@@ -11,6 +12,7 @@ export interface AudioRowProps extends ComponentProps<"div"> {
 }
 
 export default function AudioRow(props: AudioRowProps) {
+  const { setSelectedFile } = useAppContext();
   const [_, rest] = splitProps(props, ["file", "selected", "onSelect"]);
   return (
     <Card
@@ -21,7 +23,13 @@ export default function AudioRow(props: AudioRowProps) {
         }`,
         rest.class,
       )}
-      onClick={() => props.onSelect?.()}
+      onClick={() => {
+        if (props.selected) {
+          setSelectedFile(null);
+        } else {
+          props.onSelect?.();
+        }
+      }}
     >
       <CardContent class="p-3 gap-3">
         <div class="flex items-center gap-3 justify-between">
@@ -73,7 +81,7 @@ export default function AudioRow(props: AudioRowProps) {
           </div>
           {/* Year displayed on the far right */}
           <div class="text-sm text-muted-foreground whitespace-nowrap pl-3">
-            {props.file.year}
+            {props.file.date?.year}
           </div>
         </div>
       </CardContent>
