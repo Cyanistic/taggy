@@ -5,8 +5,8 @@ export interface AudioFile {
   cover?: string;
   albumTitle?: string;
   albumArtists?: string[];
-  year?: number;
   genre?: string;
+  date?: Timestamp | null;
   // Extra fields
   trackNumber?: number;
   discNumber?: number;
@@ -14,7 +14,6 @@ export interface AudioFile {
   totalDiscs?: number;
   comment?: string;
   composer?: string;
-  date?: string;
 }
 
 export type CoverData =
@@ -32,3 +31,12 @@ export const AudioTypes = [
   ".m4r",
   ".m4v",
 ];
+
+export type Timestamp = {
+  year: number; // i32
+  month?: number; // u8 (1–12)
+  day?: number; // u8 (1–31)
+  hour?: number; // u8 (0–23)
+  minute?: number; // u8 (0–59)
+  second?: number; // u8 (0–59)
+};

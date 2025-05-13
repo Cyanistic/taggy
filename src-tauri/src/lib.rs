@@ -67,8 +67,6 @@ pub struct AudioFile {
     #[serde(skip_serializing_if = "Option::is_none")]
     album_artists: Option<Vec<String>>,
     #[serde(skip_serializing_if = "Option::is_none")]
-    year: Option<i32>,
-    #[serde(skip_serializing_if = "Option::is_none")]
     genre: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
     comment: Option<String>,
@@ -142,7 +140,6 @@ fn load_audio_dir(directory: PathBuf, on_file_processed: Channel<LoadAudioDirVal
                 album_artists: tags
                     .album_artists()
                     .map(|t| t.iter().map(|&a| a.into()).collect()),
-                year: tags.year(),
                 genre: tags.genre().map(|t| t.into()),
                 composer: tags.composer().map(|t| t.into()),
                 comment: tags.comment().map(|t| t.into()),
@@ -150,7 +147,16 @@ fn load_audio_dir(directory: PathBuf, on_file_processed: Channel<LoadAudioDirVal
                 total_tracks: tags.total_tracks(),
                 disc_number: tags.disc_number(),
                 track_number: tags.track_number(),
-                date: tags.date(),
+                date: tags.date().or_else(|| {
+                    tags.year().map(|y| Timestamp {
+                        year: y,
+                        month: None,
+                        day: None,
+                        hour: None,
+                        minute: None,
+                        second: None,
+                    })
+                }),
             })));
         }
         let _ = on_file_processed.send(LoadAudioDirValue::Finshed);
@@ -198,10 +204,6 @@ fn save_audio_tags(tags: AudioFile, remove_cover: bool) -> Result<()> {
         Some(genre) => new_tags.set_title(&genre),
         None => new_tags.remove_title(),
     }
-    match tags.year {
-        Some(year) => new_tags.set_year(year),
-        None => new_tags.remove_year(),
-    }
     match tags.disc_number {
         Some(disc_number) => new_tags.set_disc_number(disc_number),
         None => new_tags.remove_disc_number(),
@@ -225,6 +227,10 @@ fn save_audio_tags(tags: AudioFile, remove_cover: bool) -> Result<()> {
     match tags.comment {
         Some(comment) => new_tags.set_comment(comment),
         None => new_tags.remove_comment(),
+    }
+    match tags.date {
+        Some(date) => new_tags.set_date(date),
+        None => new_tags.remove_date(),
     }
     if remove_cover {
         new_tags.remove_album_cover();

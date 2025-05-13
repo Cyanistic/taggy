@@ -138,13 +138,16 @@ export function AppProvider(props: { children: JSX.Element }) {
       produce((s) => {
         if (value) {
           s.rawAudioFiles[key] = value;
+          if (s.selectedFile === key) {
+            s.selectedAudioFile = value;
+          }
         } else {
           delete s.rawAudioFiles[key];
-        }
-        // if you just deleted the currently‐selected file, clear selection
-        if (s.selectedFile === key) {
-          s.selectedFile = null;
-          s.selectedAudioFile = null;
+          // if you just deleted the currently‐selected file, clear selection
+          if (s.selectedFile === key) {
+            s.selectedFile = null;
+            s.selectedAudioFile = null;
+          }
         }
       }),
     );

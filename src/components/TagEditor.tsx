@@ -7,29 +7,38 @@ import {
 } from "@/components/ui/card";
 import { ChevronDown, ChevronUp, Save, X } from "lucide-solid";
 import { Button } from "./ui/button";
-import { TextField, TextFieldLabel, TextFieldRoot } from "./ui/textfield";
+import {
+  TextField,
+  TextFieldErrorMessage,
+  TextFieldLabel,
+  TextFieldRoot,
+} from "./ui/textfield";
 import { createEffect, createMemo, createSignal, JSX, Show } from "solid-js";
 import { useAppContext } from "./AppContext";
 import { invoke } from "@tauri-apps/api/core";
-import { display, getData } from "@/utils";
+import { display, formatDateTime, getData, parseDateTime } from "@/utils";
 import { TagInput } from "./TagInput";
 import { produce } from "solid-js/store";
 import { TextArea } from "./ui/textarea";
 import { NumericPairInput } from "./NumericPairInput";
+import { AudioFile } from "@/types";
 
 export default function TagEditor() {
   const { state, audioFiles, setState, setAudioFile, setSelectedCover } =
     useAppContext();
   const [formData, setFormData] = createSignal(state.selectedAudioFile!);
+  const [formError, setFormError] = createSignal<{
+    [K in keyof AudioFile]?: string;
+  }>({});
 
   const handleReset = () => {
     setFormData(state.selectedAudioFile!);
   };
 
-  const allArtists = createMemo(() =>
+  const allArtists = createMemo<string[]>(() =>
     Object.values(audioFiles())
-      .filter((file) => file.artist)
-      .map((file) => file.artist!)
+      .flatMap((file) => [file.artist ?? "", ...(file.albumArtists ?? [])])
+      .filter(Boolean)
       .filter((artist, index, self) => self.indexOf(artist) === index),
   );
 
@@ -48,7 +57,6 @@ export default function TagEditor() {
   );
 
   createEffect(() => {
-    console.log(state.selectedAudioFile?.date);
     handleReset();
   });
 
@@ -62,6 +70,10 @@ export default function TagEditor() {
     MouseEvent
   > = async () => {
     try {
+      if (Object.values(formError()).some(Boolean)) {
+        console.error("Cannot save file, there are errors!");
+        return;
+      }
       const cover = state.selectedCover;
       const tags = {
         ...formData(),
@@ -71,7 +83,7 @@ export default function TagEditor() {
         tags,
         removeCover: state.selectedCover === null,
       });
-      tags.cover = cover ? display(cover) : undefined;
+      tags.cover = cover ? display(cover) : state.selectedAudioFile?.cover;
       setAudioFile(state.selectedFile!, tags);
       setSelectedCover(undefined);
     } catch (e) {
@@ -90,13 +102,15 @@ export default function TagEditor() {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Edit Tags</CardTitle>
+        <CardTitle class="text-primary">Edit Tags</CardTitle>
       </CardHeader>
       <CardContent class="space-y-4">
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div class="space-y-2">
             <TextFieldRoot>
-              <TextFieldLabel>Title</TextFieldLabel>
+              <TextFieldLabel class="text-primary/90 font-bold">
+                Title
+              </TextFieldLabel>
               <TextField
                 id="title"
                 name="title"
@@ -110,7 +124,9 @@ export default function TagEditor() {
 
           <div class="space-y-2">
             <TextFieldRoot>
-              <TextFieldLabel>Artist</TextFieldLabel>
+              <TextFieldLabel class="text-primary/90 font-bold">
+                Artist
+              </TextFieldLabel>
               <TagInput
                 input={formData().artist ?? ""}
                 placeholder={state.selectedAudioFile?.artist ?? ""}
@@ -127,7 +143,9 @@ export default function TagEditor() {
 
           <div class="space-y-2">
             <TextFieldRoot>
-              <TextFieldLabel>Album</TextFieldLabel>
+              <TextFieldLabel class="text-primary/90 font-bold">
+                Album
+              </TextFieldLabel>
               <TagInput
                 input={formData().albumTitle ?? ""}
                 placeholder={state.selectedAudioFile?.albumTitle ?? ""}
@@ -144,7 +162,9 @@ export default function TagEditor() {
 
           <div class="space-y-2">
             <TextFieldRoot>
-              <TextFieldLabel>Album Artist</TextFieldLabel>
+              <TextFieldLabel class="text-primary/90 font-bold">
+                Album Artist
+              </TextFieldLabel>
               <TagInput
                 input={formData().albumArtists ?? []}
                 placeholder="Search artists..."
@@ -158,24 +178,54 @@ export default function TagEditor() {
               />
             </TextFieldRoot>
           </div>
-
           <div class="space-y-2">
-            <TextFieldRoot>
-              <TextFieldLabel>Year</TextFieldLabel>
+            <TextFieldRoot
+              validationState={formError().date ? "invalid" : "valid"}
+            >
+              <TextFieldLabel class="text-primary/90 font-bold">
+                Date
+              </TextFieldLabel>
               <TextField
-                id="year"
-                name="year"
-                value={formData().year}
-                placeholder={state.selectedAudioFile?.year}
-                onInput={handleInputInput}
-                type="number"
+                id="date"
+                name="date"
+                placeholder={
+                  state.selectedAudioFile?.date
+                    ? formatDateTime(state.selectedAudioFile.date!)
+                    : "YYYY/MM/dd@hh:mm:ss"
+                }
+                value={formData().date ? formatDateTime(formData().date!) : ""}
+                onInput={(e) => {
+                  const input = e.currentTarget.value;
+                  try {
+                    setFormData((prev) => ({
+                      ...prev,
+                      date: input ? parseDateTime(input) : null,
+                    }));
+                    setFormError((prev) => ({
+                      ...prev,
+                      date: undefined,
+                    }));
+                  } catch (e) {
+                    setFormError((prev) => ({
+                      ...prev,
+                      date: (e as Error).message,
+                    }));
+                    console.error(e);
+                  }
+                }}
+                type="text"
               />
+              <div class="h-4 text-xs text-destructive font-extrabold">
+                {formError().date}
+              </div>
             </TextFieldRoot>
           </div>
 
           <div class="space-y-2">
             <TextFieldRoot>
-              <TextFieldLabel>Genre</TextFieldLabel>
+              <TextFieldLabel class="text-primary/90 font-bold">
+                Genre
+              </TextFieldLabel>
               <TagInput
                 input={formData().genre ?? ""}
                 placeholder={state.selectedAudioFile?.genre ?? ""}
@@ -208,39 +258,27 @@ export default function TagEditor() {
           <div class="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2 mt-2 border-t border-border animate-in fade-in-50 duration-300">
             <div class="space-y-2">
               <TextFieldRoot>
-                <TextFieldLabel class="text-primary/90">
-                  Composer
+                <TextFieldLabel class="text-primary/90 font-bold">
+                  Track Number / Total Tracks
                 </TextFieldLabel>
-                <TagInput
-                  input={formData().composer ?? ""}
-                  placeholder={state.selectedAudioFile?.composer ?? ""}
-                  onChange={(value) => {
-                    setFormData((prev) => ({
-                      ...prev,
-                      composer: value,
-                    }));
-                  }}
-                  suggestions={allArtists()}
+                <NumericPairInput
+                  firstLabel="Track Number"
+                  secondLabel="Total Tracks"
+                  firstValue={formData().trackNumber}
+                  secondValue={formData().totalTracks}
+                  onFirstChange={(val) =>
+                    setFormData((prev) => ({ ...prev, trackNumber: val }))
+                  }
+                  onSecondChange={(val) =>
+                    setFormData((prev) => ({ ...prev, totalTracks: val }))
+                  }
                 />
               </TextFieldRoot>
             </div>
 
             <div class="space-y-2">
               <TextFieldRoot>
-                <TextFieldLabel class="text-primary/90">Date</TextFieldLabel>
-                <TextField
-                  id="date"
-                  name="date"
-                  value={formData().date || ""}
-                  onInput={handleInputInput}
-                  type="date"
-                />
-              </TextFieldRoot>
-            </div>
-
-            <div class="space-y-2">
-              <TextFieldRoot>
-                <TextFieldLabel class="text-primary/90">
+                <TextFieldLabel class="text-primary/90 font-bold">
                   Disc Number / Total Discs
                 </TextFieldLabel>
                 <NumericPairInput
@@ -260,27 +298,28 @@ export default function TagEditor() {
 
             <div class="space-y-2">
               <TextFieldRoot>
-                <TextFieldLabel class="text-primary/90">
-                  Track Number / Total Tracks
+                <TextFieldLabel class="text-primary/90 font-bold">
+                  Composer
                 </TextFieldLabel>
-                <NumericPairInput
-                  firstLabel="Track Number"
-                  secondLabel="Total Tracks"
-                  firstValue={formData().trackNumber}
-                  secondValue={formData().totalTracks}
-                  onFirstChange={(val) =>
-                    setFormData((prev) => ({ ...prev, trackNumber: val }))
-                  }
-                  onSecondChange={(val) =>
-                    setFormData((prev) => ({ ...prev, totalTracks: val }))
-                  }
+                <TagInput
+                  input={formData().composer ?? ""}
+                  placeholder={state.selectedAudioFile?.composer ?? ""}
+                  onChange={(value) => {
+                    setFormData((prev) => ({
+                      ...prev,
+                      composer: value,
+                    }));
+                  }}
+                  suggestions={allArtists()}
                 />
               </TextFieldRoot>
             </div>
 
-            <div class="space-y-2 md:col-span-2">
+            <div class="space-y-2">
               <TextFieldRoot>
-                <TextFieldLabel class="text-primary/90">Comment</TextFieldLabel>
+                <TextFieldLabel class="text-primary/90 font-bold">
+                  Comment
+                </TextFieldLabel>
                 <TextArea
                   id="comment"
                   name="comment"
