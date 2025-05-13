@@ -14,6 +14,8 @@ import { Channel, invoke } from "@tauri-apps/api/core";
 import { convertBase64ToBlob } from "@/utils";
 import { DEFAULT_FILTER_FIELDS, FilterField } from "./FilterButton";
 import { DEFAULT_SORT_CRITERIA, SortCriterion } from "./SortButton";
+import { getCurrentWindow } from "@tauri-apps/api/window";
+import { stat } from "@tauri-apps/plugin-fs";
 
 interface AppContextValue {
   audioFiles: Accessor<Record<string, AudioFile>>;
@@ -57,6 +59,8 @@ interface AppState {
   audioDirectories: Record<string, AudioDirectoryValue>;
   selectedCover: CoverData | null | undefined;
   preferences: Preferences;
+  dragging: boolean;
+  draggingDirectory: boolean;
 }
 
 interface AudioDirectoryValue {
@@ -73,6 +77,8 @@ export function AppProvider(props: { children: JSX.Element }) {
     audioDirectories: {},
     selectedCover: undefined,
     preferences: DEFAULT_PREFERENCES,
+    dragging: false,
+    draggingDirectory: false,
   });
 
   // derive audioFiles: only those paths tracked in directories
@@ -111,6 +117,42 @@ export function AppProvider(props: { children: JSX.Element }) {
     } catch (e) {
       console.error("Error loading existing audio directories", e);
     }
+  });
+
+  onMount(async () => {
+    await getCurrentWindow().onDragDropEvent(async (e) => {
+      if (e.payload.type === "enter") {
+        setState(
+          produce((s) => {
+            s.dragging = true;
+          }),
+        );
+      } else if (e.payload.type === "drop") {
+        setState(
+          produce((s) => {
+            s.dragging = false;
+          }),
+        );
+        Promise.allSettled(
+          e.payload.paths.map(async (p) => {
+            try {
+              const info = await stat(p);
+              if (info.isDirectory) {
+                await addAudioDirectory(p);
+              }
+            } catch (e) {
+              console.error(e);
+            }
+          }),
+        );
+      } else if (e.payload.type === "leave") {
+        setState(
+          produce((s) => {
+            s.dragging = false;
+          }),
+        );
+      }
+    });
   });
 
   // Update the user's preferences whenever the preferences change

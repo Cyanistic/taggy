@@ -5,16 +5,17 @@ import AudioPreview from "./AudioPreview";
 import { Button } from "./ui/button";
 import { FolderPlus } from "lucide-solid";
 import { useAppContext } from "./AppContext";
+import { DragOverlay } from "./DragOverlay";
 
 export function TagMenu() {
-  const {
-    state,
-    setSelectedFile,
-    addAudioDirectory,
-  } = useAppContext();
+  const { state, setSelectedFile, addAudioDirectory } = useAppContext();
 
   return (
     <div class="flex flex-col md:flex-row h-screen">
+      <DragOverlay
+        isVisible={state.dragging}
+        isDraggingDirectory={true}
+      />
       {/* Left side - Preview and Tag Editor */}
       <div class="w-full h-screen md:w-1/2 p-4 border-r border-border overflow-y-auto">
         <Show
