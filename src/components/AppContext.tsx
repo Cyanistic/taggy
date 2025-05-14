@@ -33,17 +33,22 @@ interface Preferences {
   sortCriteria: SortCriterion[];
   volume: number;
   showExtraTagFields: boolean;
+  panelSizes: {
+    outer: number[];
+    inner: number[];
+  };
 }
 
 interface StoredPreferences extends Preferences {
   audioDirectories?: string[];
 }
 
-const DEFAULT_PREFERENCES: Preferences = {
+export const DEFAULT_PREFERENCES: Preferences = {
   filterFields: DEFAULT_FILTER_FIELDS,
   sortCriteria: DEFAULT_SORT_CRITERIA,
   volume: 0.1,
   showExtraTagFields: false,
+  panelSizes: { outer: [50, 50], inner: [50, 50] },
 };
 
 type Result<T, E = unknown> = { Ok: T; Err: null } | { Ok: null; Err: E };
@@ -76,7 +81,7 @@ export function AppProvider(props: { children: JSX.Element }) {
     selectedAudioFile: null,
     audioDirectories: {},
     selectedCover: undefined,
-    preferences: DEFAULT_PREFERENCES,
+    preferences: structuredClone(DEFAULT_PREFERENCES),
     dragging: false,
     draggingDirectory: false,
   });

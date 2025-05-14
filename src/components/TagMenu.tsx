@@ -1,36 +1,66 @@
-import { Show } from "solid-js";
+import { createEffect, on, Show } from "solid-js";
 import TagEditor from "./TagEditor";
 import AudioList from "./AudioList";
 import AudioPreview from "./AudioPreview";
 import { useAppContext } from "./AppContext";
 import { DragOverlay } from "./DragOverlay";
 import { EmptyStateGuide } from "./EmptySelection";
-import { Splitter } from "@ark-ui/solid/splitter";
+import { Splitter, useSplitter } from "@ark-ui/solid/splitter";
+import { produce } from "solid-js/store";
 
 export function TagMenu() {
-  const { state, setSelectedFile } = useAppContext();
+  const { state, setState, setSelectedFile } = useAppContext();
+  const outerSplitter = useSplitter({
+    defaultSize: state.preferences.panelSizes?.outer,
+    panels: [
+      { id: "left", minSize: 20 },
+      { id: "right", minSize: 30, collapsible: true },
+    ],
+    onResizeEnd: (e) => {
+      setState(
+        produce((s) => {
+          s.preferences.panelSizes.outer = e.size;
+        }),
+      );
+    },
+  });
+  const innerSplitter = useSplitter({
+    defaultSize: state.preferences.panelSizes?.inner,
+    panels: [
+      { id: "preview", minSize: 20 },
+      { id: "editor", minSize: 30 },
+    ],
+    orientation: "vertical",
+    onResizeEnd: (e) => {
+      setState(
+        produce((s) => {
+          s.preferences.panelSizes.inner = e.size;
+        }),
+      );
+    },
+  });
+
+  createEffect(
+    on(
+      () => state.preferences.panelSizes,
+      () => {
+        outerSplitter().setSizes(state.preferences.panelSizes.outer);
+        innerSplitter().setSizes(state.preferences.panelSizes.inner);
+      },
+    ),
+  );
 
   return (
     <div class="md:flex-row h-screen flex flex-col">
       <DragOverlay isVisible={state.dragging} isDraggingDirectory={true} />
-      <Splitter.Root
-        panels={[
-          { id: "left", minSize: 20 },
-          { id: "right", minSize: 30, collapsible: true },
-        ]}
-        class="h-full w-full"
-      >
+      <Splitter.RootProvider value={outerSplitter} class="h-full w-full">
         {/* Left side - Preview and Tag Editor */}
         <Splitter.Panel
           id="left"
           class="w-full md:w-1/2 h-full flex flex-col overflow-hidden"
         >
           <Show when={state.selectedAudioFile} fallback={<EmptyStateGuide />}>
-            <Splitter.Root
-              panels={[{ id: "preview" }, { id: "editor" }]}
-              orientation="vertical"
-              class="h-full"
-            >
+            <Splitter.RootProvider value={innerSplitter} class="h-full">
               <Splitter.Panel id="preview">
                 <AudioPreview />
               </Splitter.Panel>
@@ -44,7 +74,7 @@ export function TagMenu() {
               <Splitter.Panel id="editor">
                 <TagEditor />
               </Splitter.Panel>
-            </Splitter.Root>
+            </Splitter.RootProvider>
           </Show>
         </Splitter.Panel>
 
@@ -67,7 +97,7 @@ export function TagMenu() {
             }}
           />
         </Splitter.Panel>
-      </Splitter.Root>
+      </Splitter.RootProvider>
     </div>
   );
 }

@@ -139,22 +139,22 @@ export default function AudioPreview() {
           <CardContent class="p-6 h-full w-full overflow-visible">
             <div class="flex flex-col items-center min-h-0 flex-1 w-full h-full">
               {/* Album Art */}
-              <div class="mb-4 max-w-full max-h-full min-h-0 min-w-0 relative aspect-square group flex-1 flex justify-center items-center">
-                <div class="relative max-w-full max-h-full rounded-md overflow-hidden">
+              <div class="mb-4 max-w-full max-h-full min-h-0 min-w-0 relative aspect-square flex-1 flex justify-center items-center">
+                <div class="relative w-full rounded-md aspect-square overflow-hidden group">
                   <Show
                     when={file().cover}
                     fallback={
-                      <div class="w-full h-full bg-muted rounded-md flex items-center justify-center transition-all duration-300 group-hover:brightness-50">
+                      <div class="w-full bg-muted rounded-md flex items-center justify-center aspect-square transition-all duration-300 group-hover:brightness-50">
                         <Music class="h-16 w-16 text-muted-foreground" />
                       </div>
                     }
                   >
                     {(cover) => (
-                      <div class="relative w-full h-full flex items-center justify-center">
+                      <>
                         <img
                           src={cover()}
                           alt={`${file().albumTitle} cover`}
-                          class="w-full h-full object-contain rounded-md transition-all duration-300 group-hover:brightness-50"
+                          class="w-full object-contain rounded-md transition-all duration-300 group-hover:brightness-50"
                         />
                         <button
                           onClick={handleRemoveOriginalCover}
@@ -163,7 +163,7 @@ export default function AudioPreview() {
                         >
                           <X class="h-4 w-4 text-destructive-foreground" />
                         </button>
-                      </div>
+                      </>
                     )}
                   </Show>
 

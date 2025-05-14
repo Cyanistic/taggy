@@ -13,8 +13,9 @@ import { useAppContext } from "./AppContext";
 
 export function EmptyStateGuide() {
   const { state, addAudioDirectory } = useAppContext();
+
   return (
-    <div class="h-full flex flex-col items-center justify-center p-6">
+    <div class="h-full flex flex-col items-center justify-center p-6 border rounded">
       <Show
         when={Object.keys(state.audioDirectories).length}
         fallback={

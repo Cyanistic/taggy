@@ -1,10 +1,10 @@
 import { AudioFile } from "@/types";
 import { createEffect, For, Show } from "solid-js";
 import AudioRow from "./AudioRow";
-import { Search, X } from "lucide-solid";
+import { RotateCcw, Search, X } from "lucide-solid";
 import { TextField, TextFieldRoot } from "./ui/textfield";
 import { Button } from "./ui/button";
-import { useAppContext } from "./AppContext";
+import { DEFAULT_PREFERENCES, useAppContext } from "./AppContext";
 import { createVirtualizer } from "@tanstack/solid-virtual";
 import { createMemo } from "solid-js";
 import Fuse from "fuse.js";
@@ -85,13 +85,9 @@ export default function AudioList(props: AudioListProps) {
 
   const fuse = createMemo<Fuse<AudioFile>>(() => {
     return new Fuse(Object.values(audioFiles()), {
-      keys: (() => {
-        const tmp = state.preferences.filterFields
-          .filter((f) => f.enabled)
-          .map((f) => f.field);
-        console.log(tmp);
-        return tmp;
-      })(),
+      keys: state.preferences.filterFields
+        .filter((f) => f.enabled)
+        .map((f) => f.field),
       minMatchCharLength: 1,
       threshold: 0.4,
       // Add smart case functionality
@@ -163,6 +159,27 @@ export default function AudioList(props: AudioListProps) {
             <h2 class="text-2xl font-bold mb-4">Audio Files</h2>
           </div>
           <div class="space-x-2">
+            <Show
+              when={Object.values(state.preferences.panelSizes)
+                .flat()
+                .some((p) => p !== 50)}
+            >
+              <Button
+                variant="outline"
+                size="icon"
+                class="bg-background border-primary/20 hover:bg-accent hover:text-accent-foreground"
+                title="Reset UI"
+                onClick={() =>
+                  setState(
+                    produce((s) => {
+                      s.preferences.panelSizes = structuredClone(DEFAULT_PREFERENCES.panelSizes);
+                    }),
+                  )
+                }
+              >
+                <RotateCcw class="h-[1.2rem] w-[1.2rem] text-primary" />
+              </Button>
+            </Show>
             <ThemeToggle />
             <DirectoryButton />
           </div>
