@@ -35,6 +35,7 @@ import {
 import { DropdownMenu as DropdownMenuPrimitive } from "@kobalte/core/dropdown-menu";
 import { Badge } from "@/components/ui/badge";
 import { JSX } from "solid-js";
+import { useToast } from "./ToastProvider";
 
 export interface SortCriterion {
   label: string;
@@ -93,6 +94,7 @@ function Sortable(props: SortableProps) {
 }
 
 export function SortDropdown(props: EnhancedSortDropdownProps) {
+  const { showError } = useToast();
   const [sortCriteria, setSortCriteria] = createSignal<SortCriterion[]>(
     (() => {
       // Try to load from localStorage
@@ -102,7 +104,10 @@ export function SortDropdown(props: EnhancedSortDropdownProps) {
           try {
             return JSON.parse(saved);
           } catch (e) {
-            console.error("Failed to parse saved sort criteria:", e);
+            showError(
+              "Failed to parse saved sort criteria.",
+              (e as Error).message,
+            );
           }
         }
       }

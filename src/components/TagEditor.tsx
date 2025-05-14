@@ -17,6 +17,7 @@ import { produce } from "solid-js/store";
 import { TextArea } from "./ui/textarea";
 import { NumericPairInput } from "./NumericPairInput";
 import { AudioFile } from "@/types";
+import { useToast } from "./ToastProvider";
 
 export default function TagEditor() {
   const { state, audioFiles, setState, setAudioFile, setSelectedCover } =
@@ -25,10 +26,14 @@ export default function TagEditor() {
   const [formError, setFormError] = createSignal<{
     [K in keyof AudioFile]?: string;
   }>({});
+  const { showError, showSuccess } = useToast();
 
   const handleReset = () => {
     setFormData(state.selectedAudioFile!);
+    setFormError({});
   };
+
+  const hasError = createMemo(() => Object.values(formError()).some(Boolean));
 
   const allArtists = createMemo<string[]>(() =>
     Object.values(audioFiles())
@@ -65,8 +70,11 @@ export default function TagEditor() {
     MouseEvent
   > = async () => {
     try {
-      if (Object.values(formError()).some(Boolean)) {
-        console.error("Cannot save file, there are errors!");
+      if (hasError()) {
+        showError(
+          "Unable to save file",
+          "There are unresolved errors preventing you from saving",
+        );
         return;
       }
       const cover = state.selectedCover;
@@ -82,7 +90,7 @@ export default function TagEditor() {
       setAudioFile(state.selectedFile!, tags);
       setSelectedCover(undefined);
     } catch (e) {
-      console.error(e);
+      showError("Error saving changes", (e as Error).message, e);
     }
   };
 
@@ -247,8 +255,8 @@ export default function TagEditor() {
                   onClick={toggleShowTags}
                   class="w-full sm:w-auto border-primary/20 hover:bg-primary/10 hover:text-primary"
                 >
-                  <ChevronUp class="h-4 w-4 mr-2" />
-                  Show less tags
+                  <ChevronDown class="h-4 w-4 mr-2" />
+                  Show all tags
                 </Button>
               </div>
             }
@@ -335,8 +343,8 @@ export default function TagEditor() {
                 onClick={toggleShowTags}
                 class="w-full sm:w-auto border-primary/20 hover:bg-primary/10 hover:text-primary"
               >
-                <ChevronDown class="h-4 w-4 mr-2" />
-                Show all tags
+                <ChevronUp class="h-4 w-4 mr-2" />
+                Show less tags
               </Button>
             </div>
           </Show>
@@ -352,7 +360,14 @@ export default function TagEditor() {
           }
         >
           <div class="flex w-full space-x-4">
-            <Button class="w-full" onClick={handleSave}>
+            <Button
+              class="w-full"
+              onClick={handleSave}
+              disabled={hasError()}
+              title={
+                hasError() ? "You cannot save with errors!" : "Save Changes"
+              }
+            >
               <Save class="h-4 w-4 mr-2" />
               Save Changes
             </Button>

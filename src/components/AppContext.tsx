@@ -16,6 +16,7 @@ import { DEFAULT_FILTER_FIELDS, FilterField } from "./FilterButton";
 import { DEFAULT_SORT_CRITERIA, SortCriterion } from "./SortButton";
 import { getCurrentWindow } from "@tauri-apps/api/window";
 import { stat } from "@tauri-apps/plugin-fs";
+import { useToast } from "./ToastProvider";
 
 interface AppContextValue {
   audioFiles: Accessor<Record<string, AudioFile>>;
@@ -86,6 +87,8 @@ export function AppProvider(props: { children: JSX.Element }) {
     draggingDirectory: false,
   });
 
+  const { showError } = useToast();
+
   // derive audioFiles: only those paths tracked in directories
   const audioFilesMemo = createMemo(() => {
     const result: Record<string, AudioFile> = {};
@@ -120,7 +123,11 @@ export function AppProvider(props: { children: JSX.Element }) {
         await addAudioDirectory(dir);
       }
     } catch (e) {
-      console.error("Error loading existing audio directories", e);
+      showError(
+        "Error loading existing audio directories",
+        (e as Error).message,
+        e,
+      );
     }
   });
 
@@ -146,7 +153,7 @@ export function AppProvider(props: { children: JSX.Element }) {
                 await addAudioDirectory(p);
               }
             } catch (e) {
-              console.error(e);
+              showError(`Error loading "${p}"`, (e as Error).message, e);
             }
           }),
         );
@@ -269,7 +276,11 @@ export function AppProvider(props: { children: JSX.Element }) {
     try {
       await invoke("load_audio_dir", { directory, onFileProcessed });
     } catch (e) {
-      console.error("Error adding new audio directory", e);
+      showError(
+        `Error fetching audio directory ${directory}`,
+        (e as Error).message,
+        e,
+      );
       setState(
         produce((s) => {
           s.audioDirectories[directory].scanning = false;

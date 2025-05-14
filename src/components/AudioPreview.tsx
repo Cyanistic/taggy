@@ -18,6 +18,7 @@ import { display, fetchResource } from "@/utils";
 import { open } from "@tauri-apps/plugin-dialog";
 import { AudioTypes, ImageTypes } from "@/types";
 import { invoke } from "@tauri-apps/api/core";
+import { useToast } from "./ToastProvider";
 
 export default function AudioPreview() {
   const { state, setState, setSelectedCover } = useAppContext();
@@ -30,6 +31,7 @@ export default function AudioPreview() {
     audioSrc: null as string | null,
   });
   let audioRef!: HTMLAudioElement;
+  const { showError } = useToast();
 
   const formatTime = (seconds: number) => {
     const mins = Math.floor(seconds / 60);
@@ -115,7 +117,7 @@ export default function AudioPreview() {
         if (!newCover) return;
         setSelectedCover({ type: "audio", data: newCover });
       } catch (e) {
-        console.error(e);
+        showError("Error retrieving audio cover", (e as Error).message, e);
       }
     } else {
       setSelectedCover({ type: "image", path: newCover });
