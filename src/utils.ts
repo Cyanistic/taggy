@@ -129,3 +129,18 @@ export function formatDateTime(parts: Timestamp): string {
 
   return out;
 }
+
+function isString<T = unknown>(str: string | T): str is string {
+  return typeof str === "string";
+}
+
+export function deepGet(
+  obj: any,
+  keys: string | (string | number)[],
+  delimiter = ".",
+) {
+  if (isString(keys)) {
+    keys = keys.split(delimiter);
+  }
+  return keys.reduce((xs, x) => (xs && xs[x] ? xs[x] : null), obj);
+}

@@ -159,6 +159,7 @@ export function AppProvider(props: { children: JSX.Element }) {
   createEffect(() => {
     const preferences: StoredPreferences = {
       ...state.preferences,
+      filterFields: state.preferences.filterFields.filter((f) => f.enabled),
       audioDirectories: Object.keys(state.audioDirectories),
     };
     localStorage.setItem("preferences", JSON.stringify(preferences));

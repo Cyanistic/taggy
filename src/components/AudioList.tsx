@@ -15,6 +15,7 @@ import { Badge } from "./ui/badge";
 import { ThemeToggle } from "./ThemeSelector";
 import DirectoryButton from "./DirectoryButton";
 import { produce } from "solid-js/store";
+import { deepGet } from "@/utils";
 
 interface AudioListProps {
   selectedFile?: string;
@@ -77,16 +78,20 @@ export default function AudioList(props: AudioListProps) {
     { label: "Title", value: "title" },
     { label: "Artist", value: "artist" },
     { label: "Album", value: "album" },
-    { label: "Year", value: "year" },
+    { label: "Year", value: "date.year" },
     { label: "Genre", value: "genre" },
     { label: "File Path", value: "path" },
   ];
 
   const fuse = createMemo<Fuse<AudioFile>>(() => {
     return new Fuse(Object.values(audioFiles()), {
-      keys: state.preferences.filterFields
-        .filter((f) => f.enabled)
-        .map((f) => f.field),
+      keys: (() => {
+        const tmp = state.preferences.filterFields
+          .filter((f) => f.enabled)
+          .map((f) => f.field);
+        console.log(tmp);
+        return tmp;
+      })(),
       minMatchCharLength: 1,
       threshold: 0.4,
       // Add smart case functionality
@@ -99,9 +104,9 @@ export default function AudioList(props: AudioListProps) {
     // Handle multi-criteria sorting
     for (const criterion of state.preferences.sortCriteria) {
       //@ts-expect-error we already check this
-      const fieldA = a[criterion.field];
+      const fieldA = deepGet(a, criterion.field);
       //@ts-expect-error we already check this
-      const fieldB = b[criterion.field];
+      const fieldB = deepGet(b, criterion.field);
 
       const comparison = compareValues(fieldA, fieldB, criterion.direction);
 

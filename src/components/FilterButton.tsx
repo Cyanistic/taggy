@@ -28,7 +28,7 @@ export const DEFAULT_FILTER_FIELDS: FilterField[] = [
   { field: "albumTitle", label: "Album", enabled: false },
   { field: "albumArtists", label: "Album Artist", enabled: false },
   { field: "genre", label: "Genre", enabled: false },
-  { field: "year", label: "Year", enabled: false },
+  { field: "date.year", label: "Year", enabled: false },
   { field: "path", label: "File Path", enabled: false },
 ];
 
