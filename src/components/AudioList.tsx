@@ -103,9 +103,7 @@ export default function AudioList(props: AudioListProps) {
   const sortFn = createMemo(() => (a: unknown, b: unknown) => {
     // Handle multi-criteria sorting
     for (const criterion of state.preferences.sortCriteria) {
-      //@ts-expect-error we already check this
       const fieldA = deepGet(a, criterion.field);
-      //@ts-expect-error we already check this
       const fieldB = deepGet(b, criterion.field);
 
       const comparison = compareValues(fieldA, fieldB, criterion.direction);

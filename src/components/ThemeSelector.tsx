@@ -7,24 +7,10 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { createSignal } from "solid-js";
 import { createTheme } from "@/hooks/useTheme";
 
 export function ThemeToggle() {
   const { setTheme, theme, resolvedTheme } = createTheme();
-  const [mounted, setMounted] = createSignal(false);
-
-  if (!mounted) {
-    return (
-      <Button
-        variant="outline"
-        size="icon"
-        class="opacity-0 transition-opacity"
-      >
-        <Sun class="h-[1.2rem] w-[1.2rem]" />
-      </Button>
-    );
-  }
 
   // Determine current theme for visual indication
   const currentTheme = theme() === "system" ? resolvedTheme() : theme();

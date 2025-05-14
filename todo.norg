@@ -11,8 +11,8 @@
   - (x) Dark/Light theme selection
   - (x) Removing audio directories
   - (x) Persistent preferences and audio directories
-  - ( ) Resizeable UI
+  - (x) Resizeable UI
   - ( ) Add grouping support
-  - ( ) Drag and drop support for individual files or directories
+  - (x) Drag and drop support for individual files or directories
   - (x) Add extra editable tagging fields (comment, disc number, track number, etc.)
   - ( ) Add toasts for errors and success events

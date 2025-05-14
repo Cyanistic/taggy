@@ -12,6 +12,7 @@
   },
   "license": "GPL-3.0-only",
   "dependencies": {
+    "@ark-ui/solid": "^5.9.1",
     "@kobalte/core": "^0.13.9",
     "@tailwindcss/vite": "^4.1.5",
     "@tanstack/solid-pacer": "^0.2.0",
