@@ -4,9 +4,9 @@
   "version": "0.1.0",
   "identifier": "com.taggy.cyanism",
   "build": {
-    "beforeDevCommand": "pnpm dev",
+    "beforeDevCommand": "if command -v pnpm; then pnpm dev; else npm run dev; fi",
     "devUrl": "http://localhost:1420",
-    "beforeBuildCommand": "pnpm build",
+    "beforeBuildCommand": "if command -v pnpm; then pnpm build; else npm run build; fi",
     "frontendDist": "../dist"
   },
   "app": {
@@ -15,12 +15,13 @@
         "title": "taggy",
         "width": 800,
         "height": 600,
-        "decorations": false
+        "decorations": false,
+        "resizable": true
       }
     ],
     "security": {
       "csp": {
-        "default-src": "'self' ipc: http://ipc.localhost;",
+        "default-src": "'self' ipc: http://ipc.localhost asset: http://asset.localhost",
         "img-src": "'self' asset: http://asset.localhost blob: data:",
         "media-src": "'self' asset: http://asset.localhost blob:"
       },
@@ -34,11 +35,9 @@
     "active": true,
     "targets": "all",
     "icon": [
-      "icons/32x32.png",
-      "icons/128x128.png",
-      "icons/128x128@2x.png",
-      "icons/icon.icns",
-      "icons/icon.ico"
+      "icons/taggy128x128.png",
+      "icons/taggy128x128@2x.png",
+      "icons/favicon.ico"
     ],
     "linux": {
       "appimage": {

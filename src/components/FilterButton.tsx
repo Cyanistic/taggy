@@ -14,23 +14,24 @@ import { For } from "solid-js";
 export interface FilterField {
   field: string;
   label: string;
-  enabled: boolean;
 }
 
 export interface FilterProps {
-  fields: FilterField[];
-  onChange?: (checked: boolean, index: number) => void;
+  fields: string[];
+  onChange?: (checked: boolean, label: string) => void;
 }
 
-export const DEFAULT_FILTER_FIELDS: FilterField[] = [
-  { field: "title", label: "Title", enabled: true },
-  { field: "artist", label: "Artist", enabled: false },
-  { field: "albumTitle", label: "Album", enabled: false },
-  { field: "albumArtists", label: "Album Artist", enabled: false },
-  { field: "genre", label: "Genre", enabled: false },
-  { field: "date.year", label: "Year", enabled: false },
-  { field: "path", label: "File Path", enabled: false },
+export const FILTER_FIELDS: FilterField[] = [
+  { field: "title", label: "Title" },
+  { field: "artist", label: "Artist" },
+  { field: "albumTitle", label: "Album" },
+  { field: "albumArtists", label: "Album Artist" },
+  { field: "genre", label: "Genre" },
+  { field: "date.year", label: "Year" },
+  { field: "path", label: "File Path" },
 ];
+
+export const DEFAULT_FILTER_FIELDS: string[] = ["title", "artist"];
 
 export default function FilterButton(props: FilterProps) {
   return (
@@ -49,11 +50,11 @@ export default function FilterButton(props: FilterProps) {
         <DropdownMenuGroup>
           <DropdownMenuGroupLabel>Search in</DropdownMenuGroupLabel>
           <DropdownMenuSeparator />
-          <For each={props.fields}>
-            {(field, index) => (
+          <For each={FILTER_FIELDS}>
+            {(field) => (
               <DropdownMenuCheckboxItem
-                checked={field.enabled}
-                onChange={(checked) => props.onChange?.(checked, index())}
+                checked={props.fields.includes(field.field)}
+                onChange={(checked) => props.onChange?.(checked, field.field)}
                 class="focus:bg-primary/10"
               >
                 {field.label}

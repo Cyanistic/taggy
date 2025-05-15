@@ -104,6 +104,48 @@ enum LoadAudioDirValue {
 }
 
 #[tauri::command(rename_all = "camelCase")]
+fn load_audio_file(path: PathBuf) -> Result<AudioFile> {
+    let tags: Box<dyn AudioTag> = Tag::new().read_from_path(&path)?;
+    Ok(AudioFile {
+        path,
+        title: tags.title().map(|t| t.into()),
+        artist: tags.artist().map(|t| t.into()),
+        cover: tags.album_cover().and_then(|cover| {
+            let data = general_purpose::STANDARD.encode(cover.data);
+            if data == "AA==" {
+                return None;
+            };
+            Some(format!(
+                "data:{};base64,{}",
+                Into::<&'static str>::into(cover.mime_type),
+                data
+            ))
+        }),
+        album_title: tags.album_title().map(|t| t.into()),
+        album_artists: tags
+            .album_artists()
+            .map(|t| t.iter().map(|&a| a.into()).collect()),
+        genre: tags.genre().map(|t| t.into()),
+        composer: tags.composer().map(|t| t.into()),
+        comment: tags.comment().map(|t| t.into()),
+        total_discs: tags.total_discs(),
+        total_tracks: tags.total_tracks(),
+        disc_number: tags.disc_number(),
+        track_number: tags.track_number(),
+        date: tags.date().or_else(|| {
+            tags.year().map(|y| Timestamp {
+                year: y,
+                month: None,
+                day: None,
+                hour: None,
+                minute: None,
+                second: None,
+            })
+        }),
+    })
+}
+
+#[tauri::command(rename_all = "camelCase")]
 fn load_audio_dir(directory: PathBuf, on_file_processed: Channel<LoadAudioDirValue>) {
     // Spawn a thread to process the files in the directory and prevent blocking the main thread
     std::thread::spawn(move || {
@@ -121,44 +163,9 @@ fn load_audio_dir(directory: PathBuf, on_file_processed: Channel<LoadAudioDirVal
                     continue;
                 }
             };
-            let tags: Box<dyn AudioTag> = cont!(Tag::new().read_from_path(entry.path()));
-            let _ = on_file_processed.send(LoadAudioDirValue::AudioFile(Ok(AudioFile {
-                path: entry.path().into(),
-                title: tags.title().map(|t| t.into()),
-                artist: tags.artist().map(|t| t.into()),
-                cover: tags.album_cover().and_then(|cover| {
-                    let data = general_purpose::STANDARD.encode(cover.data);
-                    if data == "AA==" {
-                        return None;
-                    };
-                    Some(format!(
-                        "data:{};base64,{}",
-                        Into::<&'static str>::into(cover.mime_type),
-                        data
-                    ))
-                }),
-                album_title: tags.album_title().map(|t| t.into()),
-                album_artists: tags
-                    .album_artists()
-                    .map(|t| t.iter().map(|&a| a.into()).collect()),
-                genre: tags.genre().map(|t| t.into()),
-                composer: tags.composer().map(|t| t.into()),
-                comment: tags.comment().map(|t| t.into()),
-                total_discs: tags.total_discs(),
-                total_tracks: tags.total_tracks(),
-                disc_number: tags.disc_number(),
-                track_number: tags.track_number(),
-                date: tags.date().or_else(|| {
-                    tags.year().map(|y| Timestamp {
-                        year: y,
-                        month: None,
-                        day: None,
-                        hour: None,
-                        minute: None,
-                        second: None,
-                    })
-                }),
-            })));
+            let _ = on_file_processed.send(LoadAudioDirValue::AudioFile(Ok(cont!(
+                load_audio_file(entry.path().to_path_buf())
+            ))));
         }
         let _ = on_file_processed.send(LoadAudioDirValue::Finshed);
     });

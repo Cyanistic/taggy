@@ -12,7 +12,7 @@ import { AudioFile, CoverData } from "@/types";
 import { open } from "@tauri-apps/plugin-dialog";
 import { Channel, invoke } from "@tauri-apps/api/core";
 import { convertBase64ToBlob } from "@/utils";
-import { DEFAULT_FILTER_FIELDS, FilterField } from "./FilterButton";
+import { DEFAULT_FILTER_FIELDS } from "./FilterButton";
 import { DEFAULT_SORT_CRITERIA, SortCriterion } from "./SortButton";
 import { getCurrentWindow } from "@tauri-apps/api/window";
 import { stat } from "@tauri-apps/plugin-fs";
@@ -30,7 +30,7 @@ interface AppContextValue {
 }
 
 interface Preferences {
-  filterFields: FilterField[];
+  filterFields: string[];
   sortCriteria: SortCriterion[];
   volume: number;
   showExtraTagFields: boolean;
@@ -112,6 +112,7 @@ export function AppProvider(props: { children: JSX.Element }) {
         ...JSON.parse(preferencesRaw),
       };
       const audioDirs = preferences.audioDirectories || [];
+      preferences.filterFields = [...new Set(preferences.filterFields)];
       delete preferences.audioDirectories;
       // Fallback to default preferences if parsing any fields fail
       setState(
@@ -171,7 +172,7 @@ export function AppProvider(props: { children: JSX.Element }) {
   createEffect(() => {
     const preferences: StoredPreferences = {
       ...state.preferences,
-      filterFields: state.preferences.filterFields.filter((f) => f.enabled),
+      filterFields: state.preferences.filterFields,
       audioDirectories: Object.keys(state.audioDirectories),
     };
     localStorage.setItem("preferences", JSON.stringify(preferences));

@@ -90,9 +90,7 @@ export default function AudioList(props: AudioListProps) {
 
   const fuse = createMemo<Fuse<AudioFile>>(() => {
     return new Fuse(Object.values(audioFiles()), {
-      keys: state.preferences.filterFields
-        .filter((f) => f.enabled)
-        .map((f) => f.field),
+      keys: state.preferences.filterFields,
       minMatchCharLength: 1,
       threshold: 0.4,
       // Add smart case functionality
@@ -244,10 +242,18 @@ export default function AudioList(props: AudioListProps) {
           </div>
           <FilterButton
             fields={state.preferences.filterFields}
-            onChange={(checked, index) => {
+            onChange={(checked, field) => {
               setState(
                 produce((s) => {
-                  s.preferences.filterFields[index].enabled = checked;
+                  if (checked) {
+                    s.preferences.filterFields = [
+                      ...s.preferences.filterFields,
+                      field,
+                    ];
+                  } else {
+                    s.preferences.filterFields =
+                      s.preferences.filterFields.filter((f) => f !== field);
+                  }
                 }),
               );
             }}
@@ -279,11 +285,7 @@ export default function AudioList(props: AudioListProps) {
         <Show when={searchQuery()}>
           <div class="flex items-center text-sm text-muted-foreground">
             <span>
-              Searching in:{" "}
-              {Object.entries(state.preferences.filterFields)
-                .filter(([_, enabled]) => enabled.enabled)
-                .map(([_, f]) => f.field)
-                .join(", ")}
+              Searching in: {state.preferences.filterFields.join(", ")}
             </span>
           </div>
         </Show>
