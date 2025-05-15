@@ -1,6 +1,6 @@
 import { createEffect, on, Show } from "solid-js";
 import TagEditor from "./TagEditor";
-import AudioList from "./AudioList";
+import AudioList, { AudioListRef } from "./AudioList";
 import AudioPreview from "./AudioPreview";
 import { useAppContext } from "./AppContext";
 import { DragOverlay } from "./DragOverlay";
@@ -49,6 +49,7 @@ export function TagMenu() {
       },
     ),
   );
+  let listRef!: AudioListRef;
 
   return (
     <div class="md:flex-row h-screen flex flex-col">
@@ -62,7 +63,7 @@ export function TagMenu() {
           <Show when={state.selectedAudioFile} fallback={<EmptyStateGuide />}>
             <Splitter.RootProvider value={innerSplitter} class="h-full">
               <Splitter.Panel id="preview">
-                <AudioPreview />
+                <AudioPreview listRef={listRef} />
               </Splitter.Panel>
               <Splitter.ResizeTrigger
                 id="preview:editor"
@@ -94,6 +95,9 @@ export function TagMenu() {
             selectedFile={state.selectedFile ?? undefined}
             onSelect={(e: string) => {
               setSelectedFile(e);
+            }}
+            ref={(ref) => {
+              listRef = ref;
             }}
           />
         </Splitter.Panel>

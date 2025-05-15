@@ -7,7 +7,19 @@ license = "GPL-3.0"
 repository = "https://www.github.com/Cyanistic/taggy"
 edition = "2024"
 
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+[profile.release]
+opt-level = "s"
+debug = false
+lto = true
+codegen-units = 1
+panic = "abort"
+strip = true
+incremental = false
+
+[profile.dev]
+opt-level = 1
+debug = false
+strip = "debuginfo"
 
 [lib]
 # The `_lib` suffix may seem redundant but it is necessary

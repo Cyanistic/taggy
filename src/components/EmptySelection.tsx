@@ -57,9 +57,7 @@ export function EmptyStateGuide() {
                   </li>
                   <li class="flex items-start gap-2">
                     <span class="text-primary mt-0.5">•</span>
-                    <span>
-                      Supported audio formats: MP3, FLAC, WAV, AAC, OGG
-                    </span>
+                    <span>Supported audio formats: MP3, FLAC, MP4, M4A</span>
                   </li>
                   <li class="flex items-start gap-2">
                     <span class="text-primary mt-0.5">•</span>

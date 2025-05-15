@@ -1,5 +1,5 @@
 import { AudioFile } from "@/types";
-import { createEffect, For, Show } from "solid-js";
+import { createEffect, For, onMount, Show } from "solid-js";
 import AudioRow from "./AudioRow";
 import { RotateCcw, Search, X } from "lucide-solid";
 import { TextField, TextFieldRoot } from "./ui/textfield";
@@ -17,9 +17,15 @@ import DirectoryButton from "./DirectoryButton";
 import { produce } from "solid-js/store";
 import { deepGet } from "@/utils";
 
+export interface AudioListRef {
+  advance: (num: number) => void;
+  length: () => number;
+}
+
 interface AudioListProps {
   selectedFile?: string;
   onSelect?: (path: string) => void;
+  ref?: (ref: AudioListRef) => void;
 }
 
 // Utils for multi-criteria sorting
@@ -67,11 +73,10 @@ export default function AudioList(props: AudioListProps) {
   const [searchQuery, setSearchQuery] = createDebouncedSignal("", {
     wait: 300,
   });
-  const { state, setState, audioFiles } = useAppContext();
+  const { state, setState, setSelectedFile, audioFiles } = useAppContext();
 
   // Define filter fields based on AudioFile properties
   // Sort criteria state
-
   // Sort options that can be added to criteria
   const sortOptions = [
     { label: "Best Match", value: "score" },
@@ -151,6 +156,31 @@ export default function AudioList(props: AudioListProps) {
     listVirtualizer._willUpdate();
   });
 
+  const advance = (amount: number) => {
+    console.log("running!", amount);
+    if (!filteredFiles().length) return;
+    const index = filteredFiles().findIndex(
+      (f) => f.path == state.selectedFile,
+    );
+    let finalIndex;
+    if (index) {
+      finalIndex =
+        (index + amount + filteredFiles().length) % filteredFiles().length;
+    } else {
+      finalIndex =
+        ((amount - 1) / 2 + filteredFiles().length) % filteredFiles().length;
+    }
+    setSelectedFile(filteredFiles()[finalIndex].path);
+    listVirtualizer.scrollToIndex(finalIndex);
+  };
+
+  onMount(() => {
+    props.ref?.({
+      advance,
+      length: () => filteredFiles().length,
+    });
+  });
+
   return (
     <div class="flex flex-col h-full">
       <div class="flex flex-col justify-between">
@@ -172,7 +202,9 @@ export default function AudioList(props: AudioListProps) {
                 onClick={() =>
                   setState(
                     produce((s) => {
-                      s.preferences.panelSizes = structuredClone(DEFAULT_PREFERENCES.panelSizes);
+                      s.preferences.panelSizes = structuredClone(
+                        DEFAULT_PREFERENCES.panelSizes,
+                      );
                     }),
                   )
                 }

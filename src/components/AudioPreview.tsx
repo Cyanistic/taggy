@@ -19,8 +19,13 @@ import { open } from "@tauri-apps/plugin-dialog";
 import { AudioTypes, ImageTypes } from "@/types";
 import { invoke } from "@tauri-apps/api/core";
 import { useToast } from "./ToastProvider";
+import { AudioListRef } from "./AudioList";
 
-export default function AudioPreview() {
+interface AudioPreviewProps {
+  listRef?: AudioListRef;
+}
+
+export default function AudioPreview(props: AudioPreviewProps) {
   const { state, setState, setSelectedCover } = useAppContext();
 
   // consolidate state into a store
@@ -264,7 +269,13 @@ export default function AudioPreview() {
                   class="w-full"
                 />
                 <div class="flex items-center justify-center gap-4 mt-2">
-                  <Button variant="ghost" size="icon" class="h-8 w-8">
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    class="h-8 w-8"
+                    onClick={() => props.listRef?.advance(-1)}
+                    disabled={(props.listRef?.length() ?? 0) <= 1}
+                  >
                     <SkipBack class="h-4 w-4" />
                   </Button>
                   <Button
@@ -280,7 +291,13 @@ export default function AudioPreview() {
                       <Pause class="h-5 w-5" />
                     </Show>
                   </Button>
-                  <Button variant="ghost" size="icon" class="h-8 w-8">
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    class="h-8 w-8"
+                    onClick={() => props.listRef?.advance(1)}
+                    disabled={(props.listRef?.length() ?? 0) <= 1}
+                  >
                     <SkipForward class="h-4 w-4" />
                   </Button>
                 </div>

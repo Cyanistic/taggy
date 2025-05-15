@@ -2,11 +2,11 @@
   - (x) Saving changes to tags
   - (x) Custom sorting modifiers
   - (x) Custom search filtering modifiers
-  - ( ) Audio playback
+  - (x) Audio playback
   -- (x) Proper duration calculation
   -- (x) Volume controls
   -- (x) Seeking controls
-  -- ( ) Next/Previous file controls
+  -- (x) Next/Previous file controls
   - (x) Custom thumbnail uploads
   - (x) Dark/Light theme selection
   - (x) Removing audio directories
@@ -16,3 +16,7 @@
   - (x) Drag and drop support for individual files or directories
   - (x) Add extra editable tagging fields (comment, disc number, track number, etc.)
   - (x) Add toasts for errors and success events
+  - ( ) Add animations/transitions
+  - ( ) Improve documentation
+  - ( ) Add CLI binary
+  - ( ) Improve support for mobile screen sizes
