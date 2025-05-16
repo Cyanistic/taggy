@@ -4,9 +4,9 @@
   "version": "0.1.0",
   "identifier": "com.taggy.cyanism",
   "build": {
-    "beforeDevCommand": "if command -v pnpm; then pnpm dev; else npm run dev; fi",
+    "beforeDevCommand": "npx pnpm dev  || npm run dev",
     "devUrl": "http://localhost:1420",
-    "beforeBuildCommand": "if command -v pnpm; then pnpm build; else npm run build; fi",
+    "beforeBuildCommand": "npx pnpm build|| npm run build",
     "frontendDist": "../dist"
   },
   "app": {
